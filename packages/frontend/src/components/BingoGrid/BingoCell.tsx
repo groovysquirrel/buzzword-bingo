@@ -1,22 +1,22 @@
 import { BingoCellProps } from '../../types/game';
 
 /**
- * BingoCell Component
+ * Corporate Assessment Cell Component
  * 
- * Represents a single cell in the bingo grid.
+ * Represents a single terminology tracking zone in the assessment matrix.
  * 
  * Features:
- * - Shows different states: unmarked, marked, marking (loading)
- * - Special styling for the center "SYNERGY (FREE)" square
- * - Touch-friendly size and interaction
- * - Accessibility support with proper roles and labels
+ * - Multiple interaction states: untracked, tracked, processing
+ * - Special designation for center "SYNERGY (FREE)" strategic zone
+ * - Professional touch-friendly interaction design
+ * - Enterprise accessibility compliance with proper ARIA support
  * 
- * @param word - The word displayed in this cell
- * @param isMarked - Whether this word has been marked
- * @param isMarking - Whether this word is currently being marked (loading)
- * @param onClick - Function called when the cell is clicked
- * @param rowIndex - Row position for accessibility
- * @param colIndex - Column position for accessibility
+ * @param word - The corporate terminology displayed in this assessment zone
+ * @param isMarked - Whether this terminology has been successfully tracked
+ * @param isMarking - Whether this terminology is currently being processed
+ * @param onClick - Function executed when the assessment zone is activated
+ * @param rowIndex - Row position for accessibility compliance
+ * @param colIndex - Column position for accessibility compliance
  */
 export function BingoCell({ 
   word, 
@@ -51,24 +51,24 @@ export function BingoCell({
       className={getCellClasses()}
       onClick={handleClick}
       disabled={!isClickable}
-      aria-label={`Bingo cell: ${word}${isMarked ? ', marked' : ''}${isFreeSpace ? ', free space' : ''}`}
+      aria-label={`Assessment zone: ${word}${isMarked ? ', tracked' : ''}${isFreeSpace ? ', strategic center' : ''}`}
       aria-pressed={isMarked}
-      title={isFreeSpace ? 'Free space - already marked' : `Click to mark "${word}"`}
+      title={isFreeSpace ? 'Strategic center - pre-activated' : `Click to track "${word}"`}
       data-row={rowIndex}
       data-col={colIndex}
     >
-      {/* Loading spinner for marking state */}
+      {/* Processing indicator for tracking state */}
       {isMarking && (
         <div className="bingo-cell__spinner">
-          <div className="spinner-border spinner-border-sm text-warning" role="status">
-            <span className="visually-hidden">Marking...</span>
+          <div className="spinner-border spinner-border-sm" role="status">
+            <span className="visually-hidden">Processing...</span>
           </div>
         </div>
       )}
       
-      {/* Word content */}
+      {/* Terminology content */}
       <span className={`bingo-cell__text ${isMarking ? 'bingo-cell__text--hidden' : ''}`}>
-        {isFreeSpace ? '🚀 SYNERGY' : word}
+        {isFreeSpace ? 'SYNERGY' : word}
       </span>
     </button>
   );

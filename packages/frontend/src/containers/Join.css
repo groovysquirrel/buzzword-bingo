@@ -1,20 +1,21 @@
 /* ============================================
-   BUZZWORD BINGO - JOIN PAGE STYLES
-   Clean, maintainable, and responsive design
+   CORPORATE BUZZWORD BINGO - SATIRICAL ENTERPRISE DESIGN
+   Professional, clean, corporate aesthetic with subtle mockery
    ============================================ */
 
 /* === CONTAINER & LAYOUT === */
 .join-container {
   min-height: 100vh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  background: linear-gradient(135deg, #FEF3C7 0%, #FCD34D 100%);
-  padding: 1rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  padding: 2rem 1rem 1rem 1rem;
   position: relative;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
-/* Subtle background pattern */
+/* Corporate grid pattern background */
 .join-container::before {
   content: '';
   position: absolute;
@@ -23,46 +24,44 @@
   right: 0;
   bottom: 0;
   background-image: 
-    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    linear-gradient(rgba(71, 85, 105, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(71, 85, 105, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
   pointer-events: none;
 }
 
-/* === MAIN CARD === */
+/* === MAIN ENTERPRISE CARD === */
 .join-card {
   width: 100%;
-  max-width: 500px;
-  border-radius: 24px;
+  max-width: 480px;
+  border-radius: 12px;
   box-shadow: 
-    0 32px 64px rgba(0, 0, 0, 0.12),
-    0 16px 32px rgba(0, 0, 0, 0.08),
-    0 8px 16px rgba(0, 0, 0, 0.04);
-  border: none;
-  backdrop-filter: blur(20px);
-  background-color: rgba(255, 255, 255, 0.98);
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
   position: relative;
   z-index: 1;
   overflow: hidden;
-  animation: fadeInUp 0.6s ease-out;
+  animation: slideInFromBottom 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   min-height: 600px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
 }
 
-/* Subtle inner glow */
+/* Corporate header stripe */
 .join-card::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.3), transparent);
+  height: 4px;
+  background: linear-gradient(90deg, #1e40af, #3b82f6, #06b6d4);
 }
 
 .join-card-body {
-  padding: 3.5rem 2.5rem;
+  padding: 2.5rem 2rem;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -70,137 +69,169 @@
   flex: 1;
 }
 
-/* === LOGO === */
+/* === CORPORATE LOGO === */
 .join-bee-logo {
-  max-height: 320px;
+  max-height: 280px;
   margin-bottom: 2rem;
-  filter: drop-shadow(0 8px 32px rgba(0, 0, 0, 0.15));
-  background-color: #ffffff !important;
-  background: #ffffff !important;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.05));
+  background: #f8fafc;
   padding: 0 !important;
-  border-radius: 20px;
-  box-shadow: 
-    0 16px 32px rgba(0, 0, 0, 0.1),
-    0 8px 16px rgba(0, 0, 0, 0.06);
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  mix-blend-mode: normal !important;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  -webkit-background-clip: border-box;
-  background-clip: border-box;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
 }
 
 .join-bee-logo:hover {
-  transform: translateY(-8px) scale(1.02);
-  filter: drop-shadow(0 16px 48px rgba(0, 0, 0, 0.2));
-  background-color: #ffffff !important;
-  background: #ffffff !important;
-}
-
-/* === FORM ELEMENTS === */
-.join-form-control {
-  border: 3px solid #F59E0B;
-  border-radius: 16px;
-  font-size: 1.375rem;
-  padding: 1rem 1.5rem;
-  text-align: center;
-  font-weight: 600;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.1);
-}
-
-.join-form-control:focus {
-  border-color: #D97706;
-  box-shadow: 
-    0 0 0 4px rgba(245, 158, 11, 0.15),
-    0 8px 32px rgba(245, 158, 11, 0.2);
   transform: translateY(-2px);
-  background: white;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
-.join-form-control::placeholder {
-  color: rgba(31, 41, 55, 0.5);
+/* === CORPORATE HEADER === */
+.join-header {
+  margin-bottom: 2.5rem;
+}
+
+.join-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+
+.join-subtitle {
+  font-size: 1rem;
+  color: #64748b;
   font-weight: 500;
-}
-
-/* === PREMIUM BUTTON === */
-.join-button {
-  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%) !important;
-  border: none !important;
-  font-size: 1.5rem;
-  font-weight: 800;
-  padding: 1.25rem 3rem;
-  border-radius: 16px;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 
-    0 8px 32px rgba(245, 158, 11, 0.3),
-    0 4px 16px rgba(245, 158, 11, 0.2);
-  color: white !important;
-}
-
-/* Button shine effect */
-.join-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s;
-}
-
-.join-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #D97706 0%, #B45309 100%) !important;
-  transform: translateY(-4px);
-  box-shadow: 
-    0 16px 48px rgba(245, 158, 11, 0.4),
-    0 8px 24px rgba(245, 158, 11, 0.3);
-  color: white !important;
-  border: none !important;
-}
-
-.join-button:hover:not(:disabled)::before {
-  left: 100%;
-}
-
-.join-button:active {
-  transform: translateY(-2px);
-}
-
-.join-button:focus {
-  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%) !important;
-  color: white !important;
-  border: none !important;
-  box-shadow: 
-    0 8px 32px rgba(245, 158, 11, 0.3),
-    0 4px 16px rgba(245, 158, 11, 0.2),
-    0 0 0 4px rgba(245, 158, 11, 0.25) !important;
-}
-
-/* === INFO SECTION === */
-.join-info-section {
-  margin-top: 2.5rem;
-  padding-top: 2rem;
-  border-top: 2px solid rgba(245, 158, 11, 0.1);
-  position: relative;
-}
-
-.join-info-text {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #374151;
-  line-height: 1.6;
   margin: 0;
 }
 
-.join-info-text .emoji {
-  font-size: 1.3em;
-  margin-right: 0.5rem;
+/* === ENTERPRISE FORM === */
+.join-form {
+  margin-bottom: 2rem;
+}
+
+.join-form-group {
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.join-form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.join-form-control {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  background: #ffffff;
+  color: #1e293b;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.join-form-control:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background: #ffffff;
+}
+
+.join-form-control::placeholder {
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.join-form-text {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+/* === ENTERPRISE BUTTON === */
+.join-button {
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.join-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.join-button:active {
+  transform: translateY(0);
+}
+
+.join-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* === CORPORATE FEATURES === */
+.join-features {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.join-feature {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+  color: #4b5563;
+  font-weight: 500;
+}
+
+.join-feature:last-child {
+  margin-bottom: 0;
+}
+
+.join-feature-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-right: 0.75rem;
+  background: #3b82f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.join-feature-icon::before {
+  content: '✓';
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
 }
 
 /* === LOADING STATE === */
@@ -209,27 +240,31 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
-  color: #1F2937;
+  min-height: 300px;
+  color: #64748b;
 }
 
 .join-loading .spinner-border {
-  width: 3rem;
-  height: 3rem;
-  border-width: 3px;
+  width: 2rem;
+  height: 2rem;
+  border-width: 2px;
+  border-color: #3b82f6;
+  border-right-color: transparent;
   margin-bottom: 1rem;
 }
 
 .join-loading h5 {
   font-weight: 600;
   margin: 0;
+  font-size: 1rem;
+  color: #64748b;
 }
 
 /* === ANIMATIONS === */
-@keyframes fadeInUp {
+@keyframes slideInFromBottom {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -237,106 +272,103 @@
   }
 }
 
+/* === CORPORATE ALERT === */
+.alert-danger {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+
 /* ============================================
-   RESPONSIVE DESIGN
+   RESPONSIVE DESIGN - MOBILE FIRST
    ============================================ */
 
-/* === TABLET AND MOBILE === */
+/* === TABLET === */
 @media (max-width: 768px) {
-  .join-container {
-    padding: 1rem;
-  }
-  
   .join-card {
     max-width: 100%;
-    border-radius: 20px;
-    min-height: 500px;
+    margin: 0.5rem;
+    min-height: 550px;
   }
   
   .join-card-body {
-    padding: 3rem 2rem;
+    padding: 2rem 1.5rem;
   }
   
   .join-bee-logo {
     max-height: 240px;
     margin-bottom: 1.5rem;
-    padding: 0 !important;
-    border-radius: 16px;
-    background-color: #ffffff !important;
-    background: #ffffff !important;
-    mix-blend-mode: normal !important;
+    padding: 1.25rem;
   }
   
-  .join-form-control {
-    font-size: 1.25rem;
-    padding: 0.875rem 1.25rem;
-    border-radius: 14px;
+  .join-title {
+    font-size: 1.5rem;
   }
   
-  .join-button {
-    font-size: 1.25rem;
-    padding: 1rem 2.5rem;
-    border-radius: 14px;
-  }
-  
-  .join-info-section {
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-  }
-  
-  .join-info-text {
-    font-size: 1rem;
+  .join-subtitle {
+    font-size: 0.875rem;
   }
 }
 
-/* === SMALL MOBILE === */
+/* === MOBILE === */
 @media (max-width: 480px) {
   .join-container {
-    padding: 0.75rem;
+    padding: 1rem 0.5rem 0.5rem 0.5rem;
   }
   
   .join-card {
-    min-height: 450px;
+    margin: 0;
+    min-height: 500px;
+    border-radius: 8px;
   }
   
   .join-card-body {
-    padding: 2.5rem 1.5rem;
+    padding: 1.5rem 1.25rem;
   }
   
   .join-bee-logo {
     max-height: 200px;
     margin-bottom: 1.25rem;
-    padding: 0 !important;
-    border-radius: 14px;
-    background-color: #ffffff !important;
-    background: #ffffff !important;
-    mix-blend-mode: normal !important;
+    padding: 1rem;
+  }
+  
+  .join-title {
+    font-size: 1.375rem;
+  }
+  
+  .join-header {
+    margin-bottom: 2rem;
   }
   
   .join-form-control {
-    font-size: 1.125rem;
-    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    padding: 0.75rem;
   }
   
   .join-button {
-    font-size: 1.125rem;
-    padding: 0.875rem 2rem;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.8125rem;
   }
   
-  .join-info-text {
-    font-size: 0.95rem;
+  .join-feature {
+    font-size: 0.8125rem;
   }
   
   .join-loading {
-    min-height: 150px;
+    min-height: 200px;
   }
   
   .join-loading .spinner-border {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 1.75rem;
+    height: 1.75rem;
   }
   
   .join-loading h5 {
-    font-size: 1.1rem;
+    font-size: 0.9375rem;
   }
 }

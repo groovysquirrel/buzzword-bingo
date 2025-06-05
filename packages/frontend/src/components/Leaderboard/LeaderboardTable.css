@@ -1,47 +1,54 @@
 /**
- * LeaderboardTable Styles
+ * Corporate Performance Dashboard Styles
  * 
- * Clean, mobile-first design for displaying player rankings
- * Uses BEM naming convention for maintainable CSS
+ * Professional, clean design for displaying participant rankings
+ * Enterprise-grade styling with corporate color scheme
  */
 
 .leaderboard-table {
   width: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
-/* Empty State */
+/* === EMPTY STATE === */
 .leaderboard-empty {
   padding: 2rem 1rem;
   text-align: center;
-  background-color: #F9FAFB;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-radius: 8px;
-  border: 1px dashed #D1D5DB;
+  border: 1px dashed #cbd5e1;
+  color: #64748b;
 }
 
-/* Leaderboard Items */
+/* === PERFORMANCE DASHBOARD ITEMS === */
 .leaderboard-item {
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
   border: none !important;
   margin-bottom: 0;
+  border-radius: 6px !important;
 }
 
 .leaderboard-item:hover {
-  background-color: #FEF3C7 !important;
+  background-color: #f8fafc !important;
+  transform: translateY(-1px);
 }
 
 .leaderboard-item--current {
-  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%) !important;
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%) !important;
   color: white;
-  border: 2px solid #92400E !important;
+  border: 1px solid #1d4ed8 !important;
   border-radius: 8px !important;
   margin: 2px 0 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .leaderboard-item--current:hover {
-  background: linear-gradient(135deg, #D97706 0%, #B45309 100%) !important;
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-/* Item Content Layout */
+/* === ITEM CONTENT LAYOUT === */
 .leaderboard-item__content {
   display: flex;
   align-items: center;
@@ -49,7 +56,7 @@
   padding: 0.75rem 0;
 }
 
-/* Rank Display */
+/* === RANKING DISPLAY === */
 .leaderboard-item__rank {
   flex-shrink: 0;
   width: 40px;
@@ -59,15 +66,16 @@
 .rank-number {
   font-weight: 700;
   font-size: 1.1rem;
-  color: #F59E0B;
+  color: #3b82f6;
+  letter-spacing: -0.025em;
 }
 
 .leaderboard-item--current .rank-number {
-  color: #FEF3C7;
+  color: #dbeafe;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-/* Player Information */
+/* === PROFESSIONAL INFORMATION === */
 .leaderboard-item__player {
   flex: 1;
   min-width: 0; /* Allow text to truncate */
@@ -80,6 +88,12 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: #1e293b;
+  letter-spacing: -0.025em;
+}
+
+.leaderboard-item--current .player-nickname {
+  color: #ffffff;
 }
 
 .player-details {
@@ -87,10 +101,10 @@
 }
 
 .leaderboard-item--current .player-details {
-  color: #FEF3C7;
+  color: #dbeafe;
 }
 
-/* Statistics */
+/* === PERFORMANCE ANALYTICS === */
 .leaderboard-item__stats {
   display: flex;
   gap: 1rem;
@@ -108,62 +122,162 @@
 .stat-value {
   font-weight: 700;
   font-size: 1.1rem;
-  color: #F59E0B;
+  color: #1e40af;
   line-height: 1;
+  letter-spacing: -0.025em;
 }
 
 .leaderboard-item--current .stat-value {
-  color: #FEF3C7;
+  color: #dbeafe;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .stat-label {
   font-size: 0.75rem;
-  color: #6B7280;
+  color: #64748b;
   margin-top: 2px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .leaderboard-item--current .stat-label {
-  color: #FEF3C7;
+  color: #dbeafe;
   opacity: 0.8;
 }
 
-/* Progress Bar */
+/* === PROGRESS TRACKING === */
 .leaderboard-item__progress {
   height: 4px;
-  background-color: #E5E7EB;
+  background-color: #e2e8f0;
   border-radius: 2px;
   margin-top: 0.5rem;
   overflow: hidden;
 }
 
 .leaderboard-item--current .leaderboard-item__progress {
-  background-color: rgba(254, 243, 199, 0.3);
+  background-color: rgba(219, 234, 254, 0.3);
 }
 
 .progress-bar {
   height: 100%;
-  background-color: #F59E0B;
+  background: linear-gradient(90deg, #3b82f6 0%, #1e40af 100%);
   transition: width 0.3s ease;
   border-radius: 2px;
 }
 
 .leaderboard-item--current .progress-bar {
-  background-color: #FEF3C7;
+  background: linear-gradient(90deg, #dbeafe 0%, #bfdbfe 100%);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-/* Footer */
+/* === LEADERBOARD FOOTER === */
 .leaderboard-footer {
-  padding: 1rem;
-  text-align: center;
-  border-top: 1px solid #E5E7EB;
-  background-color: #F9FAFB;
+  border-top: 1px solid var(--corp-gray-100);
+  padding: var(--spacing-lg);
+  background: var(--corp-gray-50);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
 }
 
-/* Responsive Design */
+.footer-analytics {
+  flex: 1;
+}
 
-/* Mobile phones */
+.footer-analytics small {
+  color: var(--corp-gray-600);
+  font-weight: 600;
+  font-family: var(--font-family-primary);
+}
+
+.footer-status {
+  flex-shrink: 0;
+}
+
+/* === LEADERBOARD STATUS BAR === */
+.leaderboard-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.75rem;
+  color: #64748b;
+  font-family: var(--font-family-primary);
+}
+
+.leaderboard-status-bar__item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.leaderboard-status-bar__label {
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+.leaderboard-status-bar__value {
+  font-weight: 600;
+  color: #475569;
+  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 0.6875rem;
+}
+
+.leaderboard-status-bar__value--status {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.125rem 0.375rem;
+  background: #e2e8f0;
+  border-radius: 0.25rem;
+  font-size: 0.625rem;
+}
+
+.leaderboard-status-bar__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.leaderboard-status-bar__dot--connected {
+  background-color: var(--corp-green-500);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.leaderboard-status-bar__dot--disconnected {
+  background-color: var(--corp-red-500);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+/* === SIMPLIFIED FOOTER === */
+.leaderboard-footer-simple {
+  border-top: 1px solid var(--corp-gray-100);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--corp-gray-50);
+  text-align: center;
+}
+
+.leaderboard-footer-simple small {
+  color: var(--corp-gray-600);
+  font-weight: 600;
+  font-family: var(--font-family-primary);
+}
+
+/* === STATUS INDICATORS (Legacy - can be removed if not used elsewhere) === */
+.status-indicators {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+/* === RESPONSIVE DESIGN === */
+
+/* Mobile Portrait */
 @media (max-width: 576px) {
   .leaderboard-item__content {
     gap: 0.5rem;
@@ -197,12 +311,53 @@
   .leaderboard-item__stats {
     gap: 0.75rem;
   }
+  
+  .leaderboard-footer {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    gap: var(--spacing-sm);
+  }
+  
+  .footer-status {
+    align-self: center;
+  }
+  
+  .status-indicators {
+    justify-content: center;
+    gap: var(--spacing-md);
+  }
+  
+  .connection-status,
+  .session-status {
+    font-size: 0.6875rem;
+  }
+  
+  /* Leaderboard Status Bar Mobile Styles */
+  .leaderboard-status-bar {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.6875rem;
+  }
+  
+  .leaderboard-status-bar__item {
+    gap: 0.25rem;
+  }
+  
+  .leaderboard-status-bar__value {
+    font-size: 0.625rem;
+  }
+  
+  .leaderboard-status-bar__value--status {
+    font-size: 0.5625rem;
+    padding: 0.0625rem 0.25rem;
+  }
 }
 
-/* Very small screens */
+/* Very Small Screens */
 @media (max-width: 400px) {
   .leaderboard-item__content {
     gap: 0.25rem;
+    padding: 0.375rem 0;
   }
   
   .stat-group {
@@ -214,15 +369,15 @@
   }
 }
 
-/* Tablets and larger */
+/* Tablet Portrait */
 @media (min-width: 768px) {
   .leaderboard-item__content {
     padding: 1rem 0;
-    gap: 1.5rem;  
+    gap: 1.25rem;
   }
   
   .leaderboard-item__rank {
-    width: 50px;
+    width: 45px;
   }
   
   .rank-number {
@@ -232,40 +387,54 @@
   .player-nickname {
     font-size: 1.1rem;
   }
+  
+  .leaderboard-footer {
+    padding: var(--spacing-xl);
+  }
+  
+  .status-indicators {
+    gap: var(--spacing-xl);
+  }
 }
 
-/* Desktop */
+/* Desktop and Large Displays */
 @media (min-width: 992px) {
   .stat-group {
     min-width: 60px;
   }
   
   .leaderboard-item__stats {
-    gap: 1.5rem;
+    gap: 1.25rem;
   }
 }
 
-/* Focus styles for accessibility */
+/* === ACCESSIBILITY & INTERACTION === */
 .leaderboard-item:focus-within {
-  outline: 2px solid #3B82F6;
-  outline-offset: -2px;
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  background-color: #f1f5f9 !important;
 }
 
-/* High contrast mode support */
+/* High Contrast Mode */
 @media (prefers-contrast: high) {
   .leaderboard-item {
-    border: 1px solid #000 !important;
+    border: 1px solid #000000 !important;
   }
   
   .leaderboard-item--current {
-    border: 2px solid #fff !important;
+    border: 2px solid #ffffff !important;
   }
 }
 
-/* Reduced motion support */
+/* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   .leaderboard-item,
   .progress-bar {
     transition: none;
+  }
+  
+  .leaderboard-item:hover,
+  .leaderboard-item--current:hover {
+    transform: none;
   }
 } 

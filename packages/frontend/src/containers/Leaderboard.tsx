@@ -2,52 +2,49 @@ import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Button, Alert } from 'react-bootstrap';
 
 // Import our refactored hooks and components
-import { useGameSession, useWebSocketLeaderboard } from '../hooks';
+import { useGameSession, useWebSocketLeaderboard, useBingoGame } from '../hooks';
 import { LeaderboardTable } from '../components/Leaderboard/LeaderboardTable';
+import { PlayerStatus } from '../components/PlayerStatus';
+import './Leaderboard.css';
 
 /**
- * Leaderboard Container Component
+ * Professional Performance Dashboard Container Component
  * 
- * Uses WebSocket for real-time leaderboard updates instead of SSE polling.
- * More efficient for serverless functions.
+ * Real-time performance tracking and analytics platform for corporate assessment participants.
+ * Uses WebSocket for efficient real-time updates instead of SSE polling.
  */
 export default function Leaderboard() {
   const navigate = useNavigate();
   
   // Custom hooks handle all the complex logic that was previously in this component
   const { session, loading: sessionLoading, gameStatusMessage } = useGameSession();
+  const { bingoCard, loading: gameLoading } = useBingoGame(session);
   const {
     leaderboard,
     loading: leaderboardLoading,
     error,
     isConnected,
-    
     clearError
   } = useWebSocketLeaderboard(session);
 
-  // Calculate user's rank and entry from leaderboard data
-  const userEntry = leaderboard && session ? 
-    leaderboard.leaderboard.find(entry => entry.sessionId === session.sessionId) : null;
+  // Calculate user's rank from leaderboard data
   const userRank = leaderboard && session ? 
     leaderboard.leaderboard.findIndex(entry => entry.sessionId === session.sessionId) + 1 : null;
 
   /**
-   * Navigate back to the game
+   * Navigate back to the assessment platform
    */
-  const handleBackToGame = () => {
+  const handleBackToAssessment = () => {
     navigate('/play');
   };
 
   // Show loading screen while data loads
-  if (sessionLoading || leaderboardLoading) {
+  if (sessionLoading || leaderboardLoading || gameLoading) {
     return (
-      <div 
-        className="min-vh-100 d-flex align-items-center justify-content-center"
-        style={{ background: "linear-gradient(135deg, #FEF3C7 0%, #FCD34D 100%)" }}
-      >
-        <div className="text-center">
-          <div className="spinner-border text-warning mb-3" style={{ width: "3rem", height: "3rem" }}></div>
-          <h5 style={{ color: "#1F2937" }}>Loading leaderboard...</h5>
+      <div className="leaderboard-loading">
+        <div className="leaderboard-loading__content">
+          <div className="spinner-border leaderboard-loading__spinner"></div>
+          <h5 className="leaderboard-loading__text">Loading performance dashboard...</h5>
         </div>
       </div>
     );
@@ -56,18 +53,15 @@ export default function Leaderboard() {
   // Show error state if session is invalid
   if (!session) {
     return (
-      <div 
-        className="min-vh-100 d-flex align-items-center"
-        style={{ background: "linear-gradient(135deg, #FEF3C7 0%, #FCD34D 100%)" }}
-      >
+      <div className="leaderboard-error">
         <Container>
           <Row className="justify-content-center">
             <Col xs={12} md={6}>
               <Alert variant="danger" className="text-center">
-                <h5>Session expired!</h5>
-                <p>Please join the game again.</p>
-                <Button variant="warning" onClick={() => navigate("/")}>
-                  Join Game
+                <h5>Platform Access Error</h5>
+                <p>Your assessment session has expired. Please reconnect to the platform.</p>
+                <Button variant="primary" onClick={() => navigate("/")}>
+                  Access Platform
                 </Button>
               </Alert>
             </Col>
@@ -78,36 +72,30 @@ export default function Leaderboard() {
   }
 
   return (
-    <div 
-      className="min-vh-100"
-      style={{ background: "linear-gradient(135deg, #FEF3C7 0%, #FCD34D 100%)" }}
-    >
-      {/* Header */}
-      <div 
-        className="py-3 shadow-sm"
-        style={{ backgroundColor: "#F59E0B" }}
-      >
+    <div className="leaderboard-container">
+      {/* Corporate Header */}
+      <div className="leaderboard-header">
         <Container>
           <Row className="align-items-center">
-            <Col xs={12} className="text-center">
-              <h1 className="h5 fw-bold mb-0 text-white">
-                🏆 Leaderboard {isConnected && <span className="badge bg-success ms-2">Live</span>}
-              </h1>
+            <Col xs={12}>
+              <h1 className="leaderboard-header__title">
+                📊 Performance Analytics
+               </h1>
             </Col>
           </Row>
         </Container>
       </div>
 
-      <Container className="py-4">
-        {/* Game Status Message - shows when automatically switched to new game */}
+      <Container className="leaderboard-content">
+        {/* Platform Status Message - shows when automatically switched to new assessment */}
         {gameStatusMessage && (
           <Alert 
             variant="info" 
-            className="mb-4"
+            className="leaderboard-alert"
           >
             <div className="d-flex align-items-center">
-              <span className="me-2">🎮</span>
-              <strong>Game Update:</strong>&nbsp;{gameStatusMessage}
+              <span className="leaderboard-alert__icon">📈</span>
+              <strong>Platform Update:</strong>&nbsp;{gameStatusMessage}
             </div>
           </Alert>
         )}
@@ -124,72 +112,44 @@ export default function Leaderboard() {
           </Alert>
         )}
 
-        {/* Current Player's Rank Card */}
-        {userEntry && userRank && (
+        {/* Current Professional's Performance - Reusing PlayerStatus component */}
+        {bingoCard && (
           <Row className="justify-content-center mb-4">
             <Col xs={12} lg={8}>
-              <Card 
-                className="border-0 shadow-sm"
-                style={{ 
-                  borderRadius: "15px",
-                  backgroundColor: "#1F2937"
-                }}
-              >
-                <Card.Body className="p-4 text-center text-white">
-                  <h5 className="fw-bold mb-3">Your Rank</h5>
-                  <Row className="text-center">
-                    <Col xs={4}>
-                      <div className="h3 fw-bold mb-0" style={{ color: "#FCD34D" }}>
-                        #{userRank}
-                      </div>
-                      <small className="opacity-75">Position</small>
-                    </Col>
-                    <Col xs={4}>
-                      <div className="h3 fw-bold mb-0" style={{ color: "#FCD34D" }}>
-                        {userEntry.points}
-                      </div>
-                      <small className="opacity-75">Points</small>
-                    </Col>
-                    <Col xs={4}>
-                      <div className="h3 fw-bold mb-0" style={{ color: "#FCD34D" }}>
-                        {userEntry.progressPercentage}%
-                      </div>
-                      <small className="opacity-75">Progress</small>
-                    </Col>
-                  </Row>
-                </Card.Body>
-              </Card>
+              <PlayerStatus
+                bingoCard={bingoCard}
+                rank={userRank}
+                showProgress={true}
+              />
             </Col>
           </Row>
         )}
 
-        {/* Leaderboard Table - now using our reusable LeaderboardTable component */}
+        {/* Performance Dashboard Table - now using our reusable LeaderboardTable component */}
         <Row className="justify-content-center">
           <Col xs={12} lg={8}>
-            <Card className="border-0 shadow-sm" style={{ borderRadius: "15px" }}>
-              <Card.Header 
-                className="bg-transparent border-0 text-center py-3"
-                style={{ borderRadius: "15px 15px 0 0" }}
-              >
-                <h5 className="fw-bold mb-0" style={{ color: "#1F2937" }}>
-                  All Players
-                  {leaderboard && (
-                    <span className="text-muted fs-6 ms-2">
-                      ({leaderboard.totalPlayers} players)
-                    </span>
-                  )}
-                </h5>
+            <Card className="leaderboard-table-card border-0 shadow-sm">
+              <Card.Header className="leaderboard-table-card__header">
+                <div className="leaderboard-table-card__header-content">
+                  <h5 className="leaderboard-table-card__title">
+                    Peer Performance
+                  </h5>
+                  
+                </div>
               </Card.Header>
-              <Card.Body className="p-0">
+              <Card.Body className="leaderboard-table-card__body">
                 {leaderboard ? (
                   <LeaderboardTable
                     leaderboard={leaderboard}
                     currentSession={session}
                     showDetails={true}
+                    isConnected={isConnected}
+                    gameStatus="active" 
+                    gameId={session?.currentGameId || leaderboard.gameId}
                   />
                 ) : (
-                  <div className="text-center py-4">
-                    <p className="text-muted mb-0">Loading player data...</p>
+                  <div className="leaderboard-table-card__loading">
+                    <p className="mb-0">Loading participant performance data...</p>
                   </div>
                 )}
               </Card.Body>
@@ -197,16 +157,15 @@ export default function Leaderboard() {
           </Col>
         </Row>
 
-        {/* Back to Game Button */}
+        {/* Back to Assessment Button */}
         <Row className="justify-content-center mt-4">
           <Col xs={12} lg={6}>
             <Button 
-              variant="warning" 
               size="lg" 
-              className="w-100"
-              onClick={handleBackToGame}
+              className="w-100 leaderboard-button"
+              onClick={handleBackToAssessment}
             >
-              Back to Game
+              Return to Assessment Platform
             </Button>
           </Col>
         </Row>

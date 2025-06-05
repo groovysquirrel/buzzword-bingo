@@ -7,11 +7,12 @@ import { useGameSession, useBingoGame, useWebSocketLeaderboard } from '../hooks'
 import { BingoGrid } from '../components/BingoGrid';
 import { PlayerStatus } from '../components/PlayerStatus';
 import { MarkWordResponse } from '../types/game';
+import './BingoGame.css';
 
 /**
- * BingoGame Container Component
+ * Corporate Assessment Game Container Component
  * 
- * Refactored to use custom hooks and reusable components.
+ * Refactored to use custom hooks, reusable components, and clean CSS classes.
  * This maintains all the original functionality while being much cleaner and more maintainable.
  */
 export default function BingoGame() {
@@ -65,13 +66,10 @@ export default function BingoGame() {
   // Show loading screen while session or game data loads
   if (sessionLoading || gameLoading) {
     return (
-      <div 
-        className="min-vh-100 d-flex align-items-center justify-content-center"
-        style={{ background: "linear-gradient(135deg, #FEF3C7 0%, #FCD34D 100%)" }}
-      >
-        <div className="text-center">
-          <div className="spinner-border text-warning mb-3" style={{ width: "3rem", height: "3rem" }}></div>
-          <h5 style={{ color: "#1F2937" }}>Loading your bingo card...</h5>
+      <div className="bingo-game-loading">
+        <div className="bingo-game-loading__content">
+          <div className="spinner-border bingo-game-loading__spinner"></div>
+          <h5 className="bingo-game-loading__text">Loading your assessment platform...</h5>
         </div>
       </div>
     );
@@ -80,18 +78,15 @@ export default function BingoGame() {
   // Show error state if session is invalid
   if (!session || !bingoCard) {
     return (
-      <div 
-        className="min-vh-100 d-flex align-items-center"
-        style={{ background: "linear-gradient(135deg, #FEF3C7 0%, #FCD34D 100%)" }}
-      >
+      <div className="bingo-game-error">
         <Container>
           <Row className="justify-content-center">
             <Col xs={12} md={6}>
               <Alert variant="danger" className="text-center">
-                <h5>Something went wrong!</h5>
-                <p>Unable to load your game session.</p>
-                <Button variant="warning" onClick={() => navigate("/")}>
-                  Join New Game
+                <h5>Platform Access Error</h5>
+                <p>Unable to load your assessment session.</p>
+                <Button variant="primary" onClick={() => navigate("/")}>
+                  Return to Platform
                 </Button>
               </Alert>
             </Col>
@@ -110,36 +105,27 @@ export default function BingoGame() {
   });
 
   return (
-    <div 
-      className="min-vh-100"
-      style={{ background: "linear-gradient(135deg, #FEF3C7 0%, #FCD34D 100%)" }}
-    >
-      {/* Simplified Header */}
-      <div 
-        className="py-3 shadow-sm"
-        style={{ backgroundColor: "#F59E0B" }}
-      >
+    <div className="bingo-game-container">
+      {/* Corporate Header */}
+      <div className="bingo-game-header">
         <Container>
           <Row className="align-items-center">
-            <Col xs={12} className="text-center">
-              <h1 className="h5 fw-bold mb-0 text-white">
-                {session.nickname}
+            <Col xs={12}>
+              <h1 className="bingo-game-header__title">
+                Corporate Identifier: {session.nickname}
               </h1>
             </Col>
           </Row>
         </Container>
       </div>
 
-      <Container className="py-4">
+      <Container className="bingo-game-content">
         {/* Game Status Message - shows when automatically switched to new game */}
         {gameStatusMessage && (
-          <Alert 
-            variant="info" 
-            className="mb-4"
-          >
+          <Alert variant="info" className="bingo-game-alert">
             <div className="d-flex align-items-center">
-              <span className="me-2">🎮</span>
-              <strong>Game Update:</strong>&nbsp;{gameStatusMessage}
+              <span className="bingo-game-alert__icon">📊</span>
+              <strong>Platform Update:</strong>&nbsp;{gameStatusMessage}
             </div>
           </Alert>
         )}
@@ -156,11 +142,17 @@ export default function BingoGame() {
           </Alert>
         )}
 
-        {/* Bingo Card - now using our reusable BingoGrid component */}
+        {/* Assessment Grid - now using our reusable BingoGrid component */}
         <Row className="justify-content-center">
           <Col xs={12} lg={8}>
-            <Card className="shadow-sm border-0" style={{ borderRadius: "15px" }}>
-              <Card.Body className="p-3">
+            <Card className="bingo-game-card shadow-sm border-0">
+              <Card.Header className="bingo-game-card__header">
+                <h6 className="bingo-game-card__title">
+                  Real-time Communication Assessment Matrix
+                </h6>
+                <small className="bingo-game-card__subtitle">Tap corporate terminology you experience</small>
+              </Card.Header>
+              <Card.Body className="bingo-game-card__body">
                 <BingoGrid
                   bingoCard={bingoCard}
                   markingWord={markingWord}
@@ -186,12 +178,11 @@ export default function BingoGame() {
         <Row className="justify-content-center mt-4">
           <Col xs={12} lg={6}>
             <Button 
-              variant="warning" 
               size="lg" 
-              className="w-100"
+              className="w-100 bingo-game-button"
               onClick={handleLeaderboard}
             >
-              View Leaderboard
+              View Performance Dashboard
             </Button>
           </Col>
         </Row>
@@ -204,41 +195,40 @@ export default function BingoGame() {
         centered
       >
         <Modal.Body className="text-center p-4">
-          <div className="mb-4">
-            <span style={{ fontSize: "4rem" }}>🎉</span>
-          </div>
-          <h2 className="fw-bold mb-3" style={{ color: "#F59E0B" }}>
-            BINGO!
+          <div className="bingo-game-modal__icon">🎯</div>
+          <h2 className="bingo-game-modal__title">
+            ASSESSMENT COMPLETE!
           </h2>
-          <p className="lead mb-3">
-            Congratulations, {session.nickname}!
+          <p className="lead bingo-game-modal__text">
+            Excellent performance, {session.nickname}!
           </p>
           {bingoResult && (
-            <div className="mb-4">
-              <p className="mb-2">
-                <strong>Type:</strong> {bingoResult.bingoType}
+            <div className="bingo-game-modal__details">
+              <p className="bingo-game-modal__detail-item">
+                <strong>Pattern Type:</strong> {bingoResult.bingoType}
               </p>
-              <p className="mb-2">
-                <strong>Secret Word:</strong> {bingoResult.secretWord}
+              <p className="bingo-game-modal__detail-item">
+                <strong>Trigger Term:</strong> {bingoResult.secretWord}
               </p>
-              <p className="mb-0">
-                <strong>Total Points:</strong> {bingoResult.points}
+              <p className="bingo-game-modal__detail-item">
+                <strong>Total Score:</strong> {bingoResult.points}
               </p>
             </div>
           )}
           <div className="d-grid gap-2">
             <Button 
-              variant="warning" 
               size="lg"
+              className="bingo-game-modal__button--primary"
               onClick={handleLeaderboard}
             >
-              View Leaderboard
+              View Performance Dashboard
             </Button>
             <Button 
               variant="outline-secondary"
+              className="bingo-game-modal__button--secondary"
               onClick={() => setShowBingoModal(false)}
             >
-              Continue Playing
+              Continue Assessment
             </Button>
           </div>
         </Modal.Body>

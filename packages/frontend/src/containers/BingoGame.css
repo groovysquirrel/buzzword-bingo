@@ -1,0 +1,275 @@
+/**
+ * Corporate Assessment Game Styles
+ * 
+ * Clean, professional styling for the main assessment interface
+ * Improved readability with enhanced contrast and corporate design
+ */
+
+/* === MAIN CONTAINER === */
+.bingo-game-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+/* === LOADING STATES === */
+.bingo-game-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+.bingo-game-loading__content {
+  text-align: center;
+}
+
+.bingo-game-loading__spinner {
+  width: 3rem;
+  height: 3rem;
+  border-color: #3b82f6;
+  border-right-color: transparent;
+  margin-bottom: 1rem;
+}
+
+.bingo-game-loading__text {
+  color: #475569;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+/* === ERROR STATE === */
+.bingo-game-error {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+/* === CORPORATE HEADER === */
+.bingo-game-header {
+  padding: 0.75rem 0;
+  background: linear-gradient(90deg, #1e40af, #3b82f6);
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.bingo-game-header__title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-bottom: 0;
+  color: #ffffff;
+  letter-spacing: -0.025em;
+  text-align: center;
+}
+
+/* === MAIN CONTENT === */
+.bingo-game-content {
+  padding: 1.5rem 0;
+}
+
+/* === PLATFORM ALERTS === */
+.bingo-game-alert {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e40af;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.bingo-game-alert__icon {
+  margin-right: 0.5rem;
+}
+
+/* === ASSESSMENT CARD === */
+.bingo-game-card {
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.bingo-game-card__header {
+  text-align: center;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid #e2e8f0;
+  border-radius: 12px 12px 0 0;
+}
+
+.bingo-game-card__title {
+  margin-bottom: 0;
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 1rem;
+}
+
+.bingo-game-card__subtitle {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.bingo-game-card__body {
+  padding: 1rem;
+}
+
+/* === PERFORMANCE BUTTON === */
+.bingo-game-button {
+  background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
+  border: none;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.875rem;
+  color: #ffffff;
+  padding: 0.875rem 1.5rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(234, 88, 12, 0.2);
+}
+
+.bingo-game-button:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #ea580c 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);
+  color: #ffffff;
+}
+
+.bingo-game-button:focus {
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.2);
+  color: #ffffff;
+}
+
+/* === ASSESSMENT COMPLETION MODAL === */
+.bingo-game-modal__icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.bingo-game-modal__title {
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #1e40af;
+  font-size: 1.75rem;
+}
+
+.bingo-game-modal__text {
+  margin-bottom: 1rem;
+  color: #374151;
+}
+
+.bingo-game-modal__details {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.bingo-game-modal__detail-item {
+  margin-bottom: 0.5rem;
+  color: #374151;
+}
+
+.bingo-game-modal__detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.bingo-game-modal__button--primary {
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  border: none;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.bingo-game-modal__button--primary:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+  color: #ffffff;
+}
+
+.bingo-game-modal__button--secondary {
+  border-color: #d1d5db;
+  color: #4b5563;
+  font-weight: 500;
+}
+
+.bingo-game-modal__button--secondary:hover {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+  color: #374151;
+}
+
+/* === RESPONSIVE DESIGN === */
+
+/* Mobile Portrait */
+@media (max-width: 576px) {
+  .bingo-game-content {
+    padding: 1rem 0;
+  }
+  
+  .bingo-game-header__title {
+    font-size: 1rem;
+  }
+  
+  .bingo-game-card__body {
+    padding: 0.75rem;
+  }
+  
+  .bingo-game-button {
+    font-size: 0.8125rem;
+    padding: 0.75rem 1.25rem;
+  }
+  
+  .bingo-game-modal__title {
+    font-size: 1.5rem;
+  }
+}
+
+/* Tablet Portrait */
+@media (min-width: 768px) {
+  .bingo-game-content {
+    padding: 2rem 0;
+  }
+  
+  .bingo-game-card__body {
+    padding: 1.25rem;
+  }
+}
+
+/* Desktop and Large Displays */
+@media (min-width: 992px) {
+  .bingo-game-content {
+    padding: 2.5rem 0;
+  }
+  
+  .bingo-game-card__body {
+    padding: 1.5rem;
+  }
+}
+
+/* === ACCESSIBILITY === */
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .bingo-game-card {
+    border: 2px solid #000000;
+  }
+  
+  .bingo-game-button {
+    border: 2px solid #000000;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .bingo-game-button {
+    transition: none;
+  }
+  
+  .bingo-game-button:hover {
+    transform: none;
+  }
+}

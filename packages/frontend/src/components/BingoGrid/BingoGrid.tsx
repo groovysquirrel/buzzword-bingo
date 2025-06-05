@@ -3,27 +3,27 @@ import { BingoCell } from './BingoCell';
 import './BingoGrid.css';
 
 /**
- * BingoGrid Component
+ * Corporate Assessment Matrix Component
  * 
- * Displays a 5x5 grid of bingo words that players can mark when they hear them.
+ * Displays a 5x5 grid of corporate terminology for real-time communication analysis.
  * 
  * Features:
- * - Responsive design that works on mobile and desktop
- * - Touch-friendly cells for mobile users
- * - Visual feedback for marked words
- * - Loading states for words being marked
- * - Special styling for the center "SYNERGY (FREE)" square
+ * - Enterprise-responsive design optimized for all devices
+ * - Touch-friendly interaction zones for mobile professionals
+ * - Visual feedback system for tracked terminology
+ * - Real-time loading states during term processing
+ * - Special designation for center "SYNERGY (FREE)" assessment zone
  * 
- * @param bingoCard - The player's bingo card data
- * @param markingWord - Currently loading word (shows spinner)
- * @param onMarkWord - Function called when a word is clicked
+ * @param bingoCard - The professional's assessment matrix data
+ * @param markingWord - Currently processing term (shows activity indicator)
+ * @param onMarkWord - Function executed when terminology is identified
  */
 export function BingoGrid({ bingoCard, markingWord, onMarkWord }: BingoGridProps) {
   if (!bingoCard) {
     return (
       <div className="bingo-grid-placeholder">
         <div className="text-center text-muted">
-          Loading bingo card...
+          Initializing assessment matrix...
         </div>
       </div>
     );
@@ -49,11 +49,7 @@ export function BingoGrid({ bingoCard, markingWord, onMarkWord }: BingoGridProps
         ))}
       </div>
       
-      <div className="bingo-grid-hint">
-        <small className="text-muted text-center d-block mt-2">
-          Tap words you hear at the conference!
-        </small>
-      </div>
+
     </div>
   );
 } 

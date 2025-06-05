@@ -3,19 +3,19 @@ import { PlayerStatusProps } from '../../types/game';
 import './PlayerStatus.css';
 
 /**
- * PlayerStatus Component
+ * Professional Performance Status Component
  * 
- * Displays the current player's game statistics and progress.
+ * Displays comprehensive assessment metrics and progress analytics for current professional.
  * 
  * Features:
- * - Progress bar showing completion percentage
- * - Points, rank, and progress statistics
- * - Responsive design for mobile and desktop
- * - Clean, card-based layout
+ * - Progress tracking bar showing completion percentage
+ * - Performance scores, ranking, and progress analytics
+ * - Enterprise-responsive design for all device types
+ * - Clean, professional dashboard-style layout
  * 
- * @param bingoCard - Player's bingo card data
- * @param rank - Player's current rank
- * @param showProgress - Whether to show detailed progress bar
+ * @param bingoCard - Professional's assessment matrix data
+ * @param rank - Professional's current performance ranking
+ * @param showProgress - Whether to display detailed progress analytics
  */
 export function PlayerStatus({ 
   bingoCard, 
@@ -26,10 +26,10 @@ export function PlayerStatus({
     return (
       <Card className="player-status player-status--loading">
         <Card.Body className="text-center">
-          <div className="spinner-border text-warning mb-2" role="status">
+          <div className="spinner-border mb-2" role="status" style={{ borderColor: "#3b82f6", borderRightColor: "transparent" }}>
             <span className="visually-hidden">Loading...</span>
           </div>
-          <p className="text-muted mb-0">Loading your stats...</p>
+          <p className="mb-0" style={{ color: "#475569", fontWeight: "600" }}>Loading performance analytics...</p>
         </Card.Body>
       </Card>
     );
@@ -43,12 +43,12 @@ export function PlayerStatus({
   return (
     <Card className="player-status border-0 shadow-sm">
       <Card.Body className="p-3 p-md-4">
-        {/* Progress Bar */}
+        {/* Progress Analytics */}
         {showProgress && (
           <div className="progress-section mb-3">
             <div className="d-flex justify-content-between align-items-center mb-2">
-              <span className="progress-label">Progress</span>
-              <span className="progress-text">{markedWordsCount}/{totalWords} words</span>
+              <span className="progress-label">Assessment Progress</span>
+              <span className="progress-text">{markedWordsCount}/{totalWords} terms identified</span>
             </div>
             <div className="progress-container">
               <div
@@ -58,20 +58,20 @@ export function PlayerStatus({
                 aria-valuenow={progressPercentage}
                 aria-valuemin={0}
                 aria-valuemax={100}
-                aria-label={`Progress: ${progressPercentage}% complete`}
+                aria-label={`Assessment progress: ${progressPercentage}% complete`}
               />
             </div>
           </div>
         )}
         
-        {/* Statistics Grid */}
+        {/* Performance Metrics Grid */}
         <Row className="text-center g-2">
           <Col xs={4}>
             <div className="stat-item">
               <div className="stat-value stat-value--points">
                 {points}
               </div>
-              <div className="stat-label">Points</div>
+              <div className="stat-label">Performance Score</div>
             </div>
           </Col>
           
@@ -80,16 +80,16 @@ export function PlayerStatus({
               <div className="stat-value stat-value--progress">
                 {progressPercentage}%
               </div>
-              <div className="stat-label">Complete</div>
+              <div className="stat-label">Completed</div>
             </div>
           </Col>
           
           <Col xs={4}>
             <div className="stat-item">
               <div className="stat-value stat-value--rank">
-                #{rank || "?"}
+                #{rank || "—"}
               </div>
-              <div className="stat-label">Rank</div>
+              <div className="stat-label">Current Rank</div>
             </div>
           </Col>
         </Row>

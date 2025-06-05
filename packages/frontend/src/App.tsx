@@ -48,24 +48,27 @@ function App() {
           expand="lg" 
           className="mb-0 px-3 shadow-sm"
           style={{ 
-            backgroundColor: "#FCD34D", 
-            borderBottom: "3px solid #F59E0B"
+            backgroundColor: "#ffffff", 
+            borderBottom: "1px solid #e2e8f0",
+            fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif"
           }}
         >
           <LinkContainer to="/">
             <Navbar.Brand className="d-flex align-items-center">
               <img 
-                src="/bee.png" 
-                alt="Buzzword Bingo" 
-                height="40" 
+                src="/corp-dude.png" 
+                alt="Corporate Buzzword Bingo" 
+                height="32" 
                 className="me-2"
+                style={{ filter: "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))" }}
               />
               <span 
                 className="fw-bold"
                 style={{ 
-                  color: "#1F2937",
-                  fontSize: "1.5rem",
-                  fontWeight: "700"
+                  color: "#1e293b",
+                  fontSize: "1.25rem",
+                  fontWeight: "700",
+                  letterSpacing: "-0.025em"
                 }}
               >
                 Buzzword Bingo
@@ -74,24 +77,32 @@ function App() {
           </LinkContainer>
           <Navbar.Toggle 
             aria-controls="basic-navbar-nav"
-            style={{ borderColor: "#1F2937" }}
+            style={{ borderColor: "#e2e8f0" }}
           />
           <Navbar.Collapse id="basic-navbar-nav" className="justify-content-end">
             <Nav>
               <LinkContainer to="/status">
                 <Nav.Link 
                   className="fw-semibold me-2"
-                  style={{ color: "#1F2937" }}
+                  style={{ 
+                    color: "#64748b",
+                    fontSize: "0.875rem",
+                    fontWeight: "600"
+                  }}
                 >
-                  📊 Status Board
+                  📊 Dashboard
                 </Nav.Link>
               </LinkContainer>
               <LinkContainer to="/bingo-test">
                 <Nav.Link 
                   className="fw-semibold me-2"
-                  style={{ color: "#1F2937" }}
+                  style={{ 
+                    color: "#64748b",
+                    fontSize: "0.875rem",
+                    fontWeight: "600"
+                  }}
                 >
-                  🔧 Test Interface
+                  🔧 Test Suite
                 </Nav.Link>
               </LinkContainer>
               {isAuthenticated ? (
@@ -99,15 +110,23 @@ function App() {
                   <LinkContainer to="/admin">
                     <Nav.Link 
                       className="fw-semibold me-2"
-                      style={{ color: "#1F2937" }}
+                      style={{ 
+                        color: "#64748b",
+                        fontSize: "0.875rem",
+                        fontWeight: "600"
+                      }}
                     >
-                      ⚙️ Admin
+                      ⚙️ Administration
                     </Nav.Link>
                   </LinkContainer>
                   <LinkContainer to="/settings">
                     <Nav.Link 
                       className="fw-semibold me-2"
-                      style={{ color: "#1F2937" }}
+                      style={{ 
+                        color: "#64748b",
+                        fontSize: "0.875rem",
+                        fontWeight: "600"
+                      }}
                     >
                       Settings
                     </Nav.Link>
@@ -115,7 +134,11 @@ function App() {
                   <Nav.Link 
                     onClick={handleLogout}
                     className="fw-semibold"
-                    style={{ color: "#1F2937" }}
+                    style={{ 
+                      color: "#64748b",
+                      fontSize: "0.875rem",
+                      fontWeight: "600"
+                    }}
                   >
                     Logout
                   </Nav.Link>
@@ -125,7 +148,11 @@ function App() {
                   <LinkContainer to="/login">
                     <Nav.Link 
                       className="fw-semibold"
-                      style={{ color: "#1F2937" }}
+                      style={{ 
+                        color: "#64748b",
+                        fontSize: "0.875rem",
+                        fontWeight: "600"
+                      }}
                     >
                       Login
                     </Nav.Link>
