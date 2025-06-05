@@ -29,6 +29,11 @@ declare module "sst" {
       "type": "sst.aws.StaticSite"
       "url": string
     }
+    "GameWebSocket": {
+      "managementEndpoint": string
+      "type": "sst.aws.ApiGatewayWebSocket"
+      "url": string
+    }
     "Games": {
       "name": string
       "type": "sst.aws.Dynamo"
@@ -37,9 +42,33 @@ declare module "sst" {
       "id": string
       "type": "sst.aws.CognitoIdentityPool"
     }
+    "JoinFunction": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
+    "MarkWordFunction": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
+    "NewGameFunction": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
     "Players": {
       "name": string
       "type": "sst.aws.Dynamo"
+    }
+    "ResetGameFunction": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
+    "SubmitBingoFunction": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
+    "TestFunction": {
+      "name": string
+      "type": "sst.aws.Function"
     }
     "Uploads": {
       "name": string
@@ -53,6 +82,22 @@ declare module "sst" {
       "id": string
       "secret": string
       "type": "sst.aws.CognitoUserPoolClient"
+    }
+    "WSAuthorizerFunction": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
+    "WSConnectHandler": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
+    "WSDisconnectHandler": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
+    "WSMessageHandler": {
+      "name": string
+      "type": "sst.aws.Function"
     }
   }
 }

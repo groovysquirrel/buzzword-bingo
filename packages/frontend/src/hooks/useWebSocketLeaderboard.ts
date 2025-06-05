@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { SessionInfo, LeaderboardResponse, GameEvent } from '../types/game';
+import { API } from 'aws-amplify';
 
 interface UseWebSocketLeaderboardResult {
   leaderboard: LeaderboardResponse | null;
@@ -12,10 +13,57 @@ interface UseWebSocketLeaderboardResult {
 }
 
 /**
+ * Public token storage for status boards
+ */
+const PUBLIC_TOKEN_KEY = 'buzzword-bingo-public-token';
+const DEVICE_ID_KEY = 'buzzword-bingo-device-id';
+
+/**
+ * Generate or retrieve public access token for status boards
+ */
+async function getPublicToken(): Promise<string | null> {
+  try {
+    // Check if we already have a valid token
+    const existingToken = localStorage.getItem(PUBLIC_TOKEN_KEY);
+    const existingDeviceId = localStorage.getItem(DEVICE_ID_KEY);
+    
+    if (existingToken && existingDeviceId) {
+      console.log('Using existing public token for device:', existingDeviceId);
+      return existingToken;
+    }
+
+    // Generate new public token
+    console.log('Generating new public token...');
+    const response = await API.post('api', '/public/token', {
+      body: {
+        deviceId: existingDeviceId || undefined
+      }
+    });
+
+    if (response.success) {
+      // Store the token and device ID in localStorage
+      localStorage.setItem(PUBLIC_TOKEN_KEY, response.publicToken);
+      localStorage.setItem(DEVICE_ID_KEY, response.deviceId);
+      
+      console.log('Generated public token for device:', response.deviceId);
+      return response.publicToken;
+    } else {
+      console.error('Failed to generate public token:', response.error);
+      return null;
+    }
+  } catch (error) {
+    console.error('Error getting public token:', error);
+    return null;
+  }
+}
+
+/**
  * WebSocket-based Leaderboard Hook
  * 
  * Provides real-time leaderboard updates via WebSocket instead of SSE polling
  * More efficient for serverless functions - persistent connection vs repeated invocations
+ * 
+ * Supports both authenticated user sessions and public status board access
  */
 export function useWebSocketLeaderboard(input: SessionInfo | string | null): UseWebSocketLeaderboardResult {
   const [leaderboard, setLeaderboard] = useState<LeaderboardResponse | null>(null);
@@ -32,7 +80,7 @@ export function useWebSocketLeaderboard(input: SessionInfo | string | null): Use
 
   // Extract gameId and token from input
   const gameId = typeof input === 'string' ? input : input?.currentGameId;
-  const token = typeof input === 'string' ? null : input?.signedToken;
+  const userToken = typeof input === 'string' ? null : input?.signedToken;
 
   useEffect(() => {
     if (!gameId) {
@@ -45,12 +93,12 @@ export function useWebSocketLeaderboard(input: SessionInfo | string | null): Use
     return () => {
       disconnectWebSocket();
     };
-  }, [gameId, token]);
+  }, [gameId, userToken]);
 
   /**
    * Connect to WebSocket
    */
-  const connectWebSocket = () => {
+  const connectWebSocket = async () => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       return; // Already connected
     }
@@ -60,21 +108,43 @@ export function useWebSocketLeaderboard(input: SessionInfo | string | null): Use
         ? 'wss://ws-dev.buzzwordbingo.live'
         : 'wss://ws.buzzwordbingo.live';
       
-      // Add token as query parameter for authentication
-      const url = token ? `${wsUrl}?token=${encodeURIComponent(token)}` : wsUrl;
+      // Determine which token to use
+      let token: string | null = null;
+      let connectionType = '';
+
+      if (userToken) {
+        // User session - use provided token
+        token = userToken;
+        connectionType = 'user';
+        console.log('Connecting to WebSocket with user token for:', typeof input === 'object' ? input?.nickname : 'user');
+      } else {
+        // Public access - get or generate public token
+        token = await getPublicToken();
+        connectionType = 'public';
+        console.log('Connecting to WebSocket with public token for status board');
+      }
+
+      if (!token) {
+        setError('Failed to obtain access token');
+        setLoading(false);
+        return;
+      }
       
-      console.log('Connecting to WebSocket:', url);
+      const url = `${wsUrl}?token=${encodeURIComponent(token)}`;
+      console.log(`WebSocket URL (${connectionType}):`, wsUrl); // Don't log the full URL with token for security
+      
       const ws = new WebSocket(url);
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log('WebSocket connected');
+        console.log(`WebSocket connected successfully (${connectionType})`);
         setIsConnected(true);
         setError(null);
         reconnectAttempts.current = 0;
         
         // Subscribe to game updates
         if (gameId) {
+          console.log('Subscribing to game updates for:', gameId);
           ws.send(JSON.stringify({
             action: 'subscribe',
             gameId: gameId
@@ -92,9 +162,24 @@ export function useWebSocketLeaderboard(input: SessionInfo | string | null): Use
       };
 
       ws.onclose = (event) => {
-        console.log('WebSocket disconnected:', event.code, event.reason);
+        console.log('WebSocket disconnected:', { 
+          code: event.code, 
+          reason: event.reason,
+          wasClean: event.wasClean 
+        });
         setIsConnected(false);
         wsRef.current = null;
+        
+        // Handle different close codes
+        if (event.code === 1006) {
+          setError('WebSocket connection failed - possibly authorization issue');
+        } else if (event.code === 1002) {
+          setError('WebSocket protocol error');
+        } else if (event.code === 1003) {
+          setError('WebSocket connection rejected');
+        } else if (event.code === 1011) {
+          setError('WebSocket server error');
+        }
         
         // Attempt to reconnect if not a normal closure
         if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
@@ -104,7 +189,7 @@ export function useWebSocketLeaderboard(input: SessionInfo | string | null): Use
 
       ws.onerror = (error) => {
         console.error('WebSocket error:', error);
-        setError('WebSocket connection error');
+        setError('WebSocket connection error - check network connectivity');
       };
 
     } catch (error) {

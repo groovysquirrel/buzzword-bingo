@@ -1,29 +1,37 @@
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Button, Alert } from 'react-bootstrap';
 
 // Import our refactored hooks and components
-import { useGameSession, useLeaderboard } from '../hooks';
-import { LeaderboardTable } from '../components/Leaderboard';
+import { useGameSession, useWebSocketLeaderboard } from '../hooks';
+import { LeaderboardTable } from '../components/Leaderboard/LeaderboardTable';
 
 /**
  * Leaderboard Container Component
  * 
- * Refactored to use custom hooks and reusable components.
- * This maintains all the original functionality while being much cleaner and more maintainable.
+ * Uses WebSocket for real-time leaderboard updates instead of SSE polling.
+ * More efficient for serverless functions.
  */
 export default function Leaderboard() {
   const navigate = useNavigate();
   
   // Custom hooks handle all the complex logic that was previously in this component
   const { session, loading: sessionLoading, gameStatusMessage } = useGameSession();
-  const { 
-    leaderboard, 
-    loading: leaderboardLoading, 
+  const {
+    leaderboard,
+    events,
+    loading: leaderboardLoading,
     error,
-    getCurrentPlayerRank,
-    getCurrentPlayerEntry,
+    isConnected,
+    lastUpdate,
     clearError
-  } = useLeaderboard(session);
+  } = useWebSocketLeaderboard(session);
+
+  // Calculate user's rank and entry from leaderboard data
+  const userEntry = leaderboard && session ? 
+    leaderboard.leaderboard.find(entry => entry.sessionId === session.sessionId) : null;
+  const userRank = leaderboard && session ? 
+    leaderboard.leaderboard.findIndex(entry => entry.sessionId === session.sessionId) + 1 : null;
 
   /**
    * Navigate back to the game
@@ -71,9 +79,6 @@ export default function Leaderboard() {
     );
   }
 
-  const userRank = getCurrentPlayerRank();
-  const userEntry = getCurrentPlayerEntry();
-
   return (
     <div 
       className="min-vh-100"
@@ -88,7 +93,7 @@ export default function Leaderboard() {
           <Row className="align-items-center">
             <Col xs={12} className="text-center">
               <h1 className="h5 fw-bold mb-0 text-white">
-                Leaderboard
+                🏆 Leaderboard {isConnected && <span className="badge bg-success ms-2">Live</span>}
               </h1>
             </Col>
           </Row>
@@ -122,7 +127,7 @@ export default function Leaderboard() {
         )}
 
         {/* Current Player's Rank Card */}
-        {userEntry && (
+        {userEntry && userRank && (
           <Row className="justify-content-center mb-4">
             <Col xs={12} lg={8}>
               <Card 
@@ -170,6 +175,11 @@ export default function Leaderboard() {
               >
                 <h5 className="fw-bold mb-0" style={{ color: "#1F2937" }}>
                   All Players
+                  {leaderboard && (
+                    <span className="text-muted fs-6 ms-2">
+                      ({leaderboard.totalPlayers} players)
+                    </span>
+                  )}
                 </h5>
               </Card.Header>
               <Card.Body className="p-0">

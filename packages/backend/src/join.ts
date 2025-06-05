@@ -6,7 +6,7 @@ import { handler } from "./lib/handler";
 import { Player, JoinGameResponse } from "./lib/types";
 import { generateSessionId, createSessionToken } from "./lib/token";
 import { getCurrentGameId, getCurrentActiveGameId } from "./lib/gameUtils";
-import { addEvent } from "./sseLeaderboard";
+import { addEvent } from "./lib/gameEvents";
 
 const dynamoDb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 

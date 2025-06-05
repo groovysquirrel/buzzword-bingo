@@ -1,17 +1,12 @@
 import { Resource } from "sst";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { ScanCommand, DeleteCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { APIGatewayProxyEvent } from "aws-lambda";
+import { WebSocketManager } from "../lib/websocketManager";
+import { getCurrentLeaderboard } from "../lib/gameEvents";
 
 const dynamoDb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
-
-// For now, let's create a simple leaderboard function here
-// We'll integrate with the existing leaderboard logic
-async function getCurrentLeaderboard(gameId: string) {
-  // This is a simplified version - in production you'd import from sseLeaderboard
-  // or create a shared leaderboard service
-  return [];
-}
+const webSocketManager = WebSocketManager.getInstance();
 
 /**
  * WebSocket Message Handler
@@ -67,7 +62,22 @@ export async function main(event: APIGatewayProxyEvent) {
  */
 async function handleSubscribe(connectionId: string, gameId: string) {
   console.log(`Connection ${connectionId} subscribed to game ${gameId}`);
-  // TODO: Store subscription info and send initial data
+  
+  try {
+    // Send confirmation and initial leaderboard data
+    await webSocketManager.sendMessage(connectionId, {
+      type: "subscribed",
+      gameId,
+      message: "Successfully subscribed to game updates"
+    });
+
+    // Send current leaderboard immediately
+    if (gameId) {
+      await handleGetLeaderboard(connectionId, gameId);
+    }
+  } catch (error) {
+    console.error("Failed to handle subscription:", error);
+  }
 }
 
 /**
@@ -75,7 +85,11 @@ async function handleSubscribe(connectionId: string, gameId: string) {
  */
 async function handleUnsubscribe(connectionId: string) {
   console.log(`Connection ${connectionId} unsubscribed`);
-  // TODO: Remove subscription info
+  
+  await webSocketManager.sendMessage(connectionId, {
+    type: "unsubscribed",
+    message: "Unsubscribed from game updates"
+  });
 }
 
 /**
@@ -89,10 +103,23 @@ async function handleGetLeaderboard(connectionId: string, gameId: string) {
 
   try {
     const leaderboard = await getCurrentLeaderboard(gameId);
+    
+    await webSocketManager.sendMessage(connectionId, {
+      type: "leaderboard_update",
+      gameId,
+      timestamp: new Date().toISOString(),
+      leaderboard: leaderboard,
+      totalPlayers: leaderboard.length
+    });
+
     console.log(`Sent leaderboard to ${connectionId} for game ${gameId}`);
-    // TODO: Send leaderboard data via WebSocket
   } catch (error) {
     console.error("Failed to get leaderboard:", error);
+    
+    await webSocketManager.sendMessage(connectionId, {
+      type: "error",
+      message: "Failed to retrieve leaderboard"
+    });
   }
 }
 
@@ -101,23 +128,10 @@ async function handleGetLeaderboard(connectionId: string, gameId: string) {
  */
 export async function broadcastToGame(gameId: string, data: any) {
   try {
-    // Get all active connections
-    const result = await dynamoDb.send(new ScanCommand({
-      TableName: Resource.Events.name,
-      FilterExpression: "#type = :type",
-      ExpressionAttributeNames: {
-        "#type": "type",
-      },
-      ExpressionAttributeValues: {
-        ":type": "websocket_connection",
-      },
-    }));
-
-    const connections = result.Items || [];
+    console.log(`Broadcasting message for game ${gameId}:`, data);
     
-    console.log(`Broadcasting message to ${connections.length} connections for game ${gameId}:`, data);
-    
-    // TODO: Implement actual message broadcasting
+    // Use the WebSocket manager to broadcast the message
+    await webSocketManager.broadcastMessage(data);
     
   } catch (error) {
     console.error("Broadcast error:", error);

@@ -4,7 +4,7 @@ import { ScanCommand, BatchWriteCommand, PutCommand, UpdateCommand, DynamoDBDocu
 import { APIGatewayProxyEvent } from "aws-lambda";
 import { handler } from "../lib/handler";
 import { createDefaultGame } from "../lib/gameUtils";
-import { addEvent } from "../sseLeaderboard";
+import { addEvent } from "../lib/gameEvents";
 
 const dynamoDb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 

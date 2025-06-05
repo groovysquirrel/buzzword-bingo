@@ -2,6 +2,7 @@
   "name": "@buzzword-bingo/backend",
   "version": "0.0.0",
   "dependencies": {
+    "@aws-sdk/client-apigatewaymanagementapi": "^3.616.0",
     "@aws-sdk/client-dynamodb": "^3.616.0",
     "@aws-sdk/lib-dynamodb": "^3.616.0",
     "sst": "3.17.0",

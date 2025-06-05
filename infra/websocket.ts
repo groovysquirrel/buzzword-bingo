@@ -7,8 +7,8 @@ export const gameWebSocket = new sst.aws.ApiGatewayWebSocket("GameWebSocket", {
   }
 });
 
-// WebSocket Lambda functions
-const connectHandler = new sst.aws.Function("WSConnectHandler", {
+// Define WebSocket handler functions first
+const wsConnectHandler = new sst.aws.Function("WSConnectHandler", {
   handler: "packages/backend/src/websocket/connect.main",
   link: [tables.players, tables.games, tables.bingoProgress, tables.completedBingo, tables.events, tables.bingoCards],
   environment: {
@@ -16,40 +16,44 @@ const connectHandler = new sst.aws.Function("WSConnectHandler", {
   }
 });
 
-const disconnectHandler = new sst.aws.Function("WSDisconnectHandler", {
+const wsDisconnectHandler = new sst.aws.Function("WSDisconnectHandler", {
   handler: "packages/backend/src/websocket/disconnect.main",
   link: [tables.players, tables.games, tables.bingoProgress, tables.completedBingo, tables.events, tables.bingoCards],
 });
 
-const messageHandler = new sst.aws.Function("WSMessageHandler", {
+const wsMessageHandler = new sst.aws.Function("WSMessageHandler", {
   handler: "packages/backend/src/websocket/message.main",
-  link: [tables.players, tables.games, tables.bingoProgress, tables.completedBingo, tables.events, tables.bingoCards],
-  environment: {
-    WEBSOCKET_API_ENDPOINT: gameWebSocket.url,
-  }
+  link: [tables.players, tables.games, tables.bingoProgress, tables.completedBingo, tables.events, tables.bingoCards, gameWebSocket],
+
+  });
+
+const wsAuthorizerFunction = new sst.aws.Function("WSAuthorizerFunction", {
+  handler: "packages/backend/src/websocket/authorizer.main",
 });
 
-// Add Lambda authorizer for WebSocket connections using session tokens
+// Add Lambda authorizer for WebSocket connections
 const wsAuthorizer = gameWebSocket.addAuthorizer("WSAuthorizer", {
   lambda: {
-    function: new sst.aws.Function("WSAuthorizerHandler", {
-      handler: "packages/backend/src/websocket/authorizer.main",
-    }).arn,
+    function: wsAuthorizerFunction.arn,
     identitySources: ["route.request.querystring.token"]
   },
 });
 
-// WebSocket routes
-gameWebSocket.route("$connect", connectHandler.arn, {
+// WebSocket routes following the working pattern
+gameWebSocket.route("$connect", wsConnectHandler.arn, {
   auth: { lambda: wsAuthorizer.id }
 });
 
-gameWebSocket.route("$disconnect", disconnectHandler.arn);
+gameWebSocket.route("$disconnect", wsDisconnectHandler.arn);
 
-gameWebSocket.route("$default", messageHandler.arn);
+gameWebSocket.route("$default", wsMessageHandler.arn);
 
-// Specific message routes
-gameWebSocket.route("subscribe", messageHandler.arn);
-gameWebSocket.route("unsubscribe", messageHandler.arn);
+// Custom message routes for specific actions
+gameWebSocket.route("subscribe", wsMessageHandler.arn);
+gameWebSocket.route("unsubscribe", wsMessageHandler.arn);
+gameWebSocket.route("get_leaderboard", wsMessageHandler.arn);
+
+// Export for use in API functions that need to broadcast
+export const webSocketApiUrl = gameWebSocket.url;
 
 

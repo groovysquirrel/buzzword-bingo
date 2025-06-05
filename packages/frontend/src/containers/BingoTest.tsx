@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { API } from "aws-amplify";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
@@ -9,6 +9,8 @@ import Form from "react-bootstrap/Form";
 import Badge from "react-bootstrap/Badge";
 import Table from "react-bootstrap/Table";
 import Alert from "react-bootstrap/Alert";
+import ListGroup from "react-bootstrap/ListGroup";
+import { WebSocketService, getPublicToken } from "../lib/websocket";
 
 interface SessionInfo {
   sessionId: string;
@@ -61,6 +63,22 @@ interface GameHistoryResponse {
   history: GameHistoryEntry[];
 }
 
+interface WebSocketMessage {
+  timestamp: string;
+  type: string;
+  data: any;
+  source: 'user' | 'public';
+}
+
+interface PublicTokenResponse {
+  success: boolean;
+  deviceId: string;
+  publicToken: string;
+  permissions: string[];
+  expiresAt: string | null;
+  timestamp: string;
+}
+
 export default function BingoTest() {
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [activeSessionIndex, setActiveSessionIndex] = useState<number | null>(null);
@@ -72,7 +90,292 @@ export default function BingoTest() {
   const [adminResults, setAdminResults] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
+  // WebSocket testing state
+  const [_wsUserService, setWsUserService] = useState<WebSocketService | null>(null);
+  const [_wsPublicService, setWsPublicService] = useState<WebSocketService | null>(null);
+  const [wsUserStatus, setWsUserStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
+  const [wsPublicStatus, setWsPublicStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
+  const [wsMessages, setWsMessages] = useState<WebSocketMessage[]>([]);
+  const [publicTokenData, setPublicTokenData] = useState<PublicTokenResponse | null>(null);
+  const [wsErrors, setWsErrors] = useState<string[]>([]);
+  const [wsStatusMessages, setWsStatusMessages] = useState<string[]>([]);
+
+  const wsUserRef = useRef<WebSocketService | null>(null);
+  const wsPublicRef = useRef<WebSocketService | null>(null);
+
   const activeSession = activeSessionIndex !== null ? sessions[activeSessionIndex] : null;
+
+  // Cleanup WebSocket connections on unmount
+  useEffect(() => {
+    return () => {
+      if (wsUserRef.current) {
+        wsUserRef.current.disconnect();
+      }
+      if (wsPublicRef.current) {
+        wsPublicRef.current.disconnect();
+      }
+    };
+  }, []);
+
+  const addWsMessage = (type: string, data: any, source: 'user' | 'public') => {
+    const message: WebSocketMessage = {
+      timestamp: new Date().toISOString(),
+      type,
+      data,
+      source
+    };
+    setWsMessages(prev => [message, ...prev.slice(0, 49)]); // Keep last 50 messages
+  };
+
+  const addWsError = (error: string) => {
+    setWsErrors(prev => [error, ...prev.slice(0, 9)]); // Keep last 10 errors
+  };
+
+  const addWsStatus = (status: string) => {
+    setWsStatusMessages(prev => [status, ...prev.slice(0, 9)]); // Keep last 10 status messages
+  };
+
+  const generatePublicToken = async () => {
+    setLoading(true);
+    try {
+      const token = await getPublicToken();
+      if (token) {
+        // Get the device ID from localStorage
+        const deviceId = localStorage.getItem('buzzword-bingo-device-id') || 'unknown';
+        
+        setPublicTokenData({
+          success: true,
+          deviceId,
+          publicToken: token,
+          permissions: ['read_leaderboard', 'read_events'],
+          expiresAt: null,
+          timestamp: new Date().toISOString()
+        });
+        console.log('Generated public token for device:', deviceId);
+      } else {
+        throw new Error('Failed to generate public token');
+      }
+    } catch (error) {
+      console.error('Public token generation error:', error);
+      addWsError(`Public token generation failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    setLoading(false);
+  };
+
+  const connectUserWebSocket = async () => {
+    if (!activeSession) {
+      alert('Please select an active player first');
+      return;
+    }
+
+    if (wsUserRef.current?.isConnected()) {
+      console.log('User WebSocket already connected');
+      return;
+    }
+
+    try {
+      // Disconnect existing connection if any
+      if (wsUserRef.current) {
+        wsUserRef.current.disconnect();
+      }
+
+      setWsUserStatus('connecting');
+      addWsStatus('User WebSocket: Connecting...');
+
+      const wsUrl = process.env.NODE_ENV === 'development' 
+        ? 'wss://ws-dev.buzzwordbingo.live'
+        : 'wss://ws.buzzwordbingo.live';
+      
+      console.log('Creating user WebSocket service');
+      
+      const service = new WebSocketService({
+        url: wsUrl,
+        token: activeSession.signedToken,
+        maxReconnectAttempts: 3,
+        reconnectDelay: 1000
+      });
+
+      // Set up event listeners
+      service.on('connectionChange', (isConnected: boolean) => {
+        setWsUserStatus(isConnected ? 'connected' : 'disconnected');
+        addWsMessage('connection', { 
+          status: isConnected ? 'connected' : 'disconnected', 
+          user: activeSession.nickname 
+        }, 'user');
+      });
+
+      service.on('message', (data: any) => {
+        console.log('User WebSocket message:', data);
+        addWsMessage('message', data, 'user');
+        
+        // Handle leaderboard updates automatically
+        if (data.type === 'leaderboard_update' && data.leaderboard) {
+          const leaderboardResponse: LeaderboardResponse = {
+            gameId: data.gameId,
+            timestamp: data.timestamp,
+            totalPlayers: data.totalPlayers || data.leaderboard.length,
+            leaderboard: data.leaderboard
+          };
+          setLeaderboard(leaderboardResponse);
+          console.log('Updated leaderboard from WebSocket:', leaderboardResponse);
+        }
+      });
+
+      service.on('error', (error: Error) => {
+        console.error('User WebSocket error:', error);
+        setWsUserStatus('error');
+        addWsError(`User WebSocket error: ${error.message}`);
+      });
+
+      service.on('statusUpdate', (status: string) => {
+        addWsStatus(`User WebSocket: ${status}`);
+      });
+
+      // Store service reference
+      wsUserRef.current = service;
+      setWsUserService(service);
+
+      // Connect
+      await service.connect();
+      
+      // Subscribe to game updates if connected
+      if (service.isConnected()) {
+        service.sendMessage({
+          action: 'subscribe',
+          gameId: activeSession.currentGameId
+        });
+      }
+
+    } catch (error) {
+      console.error('Failed to create user WebSocket:', error);
+      setWsUserStatus('error');
+      addWsError(`Failed to create user WebSocket: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
+  const connectPublicWebSocket = async () => {
+    if (!publicTokenData) {
+      await generatePublicToken();
+      return;
+    }
+
+    if (wsPublicRef.current?.isConnected()) {
+      console.log('Public WebSocket already connected');
+      return;
+    }
+
+    try {
+      // Disconnect existing connection if any
+      if (wsPublicRef.current) {
+        wsPublicRef.current.disconnect();
+      }
+
+      setWsPublicStatus('connecting');
+      addWsStatus('Public WebSocket: Connecting...');
+
+      const wsUrl = process.env.NODE_ENV === 'development' 
+        ? 'wss://ws-dev.buzzwordbingo.live'
+        : 'wss://ws.buzzwordbingo.live';
+      
+      console.log('Creating public WebSocket service');
+      
+      const service = new WebSocketService({
+        url: wsUrl,
+        token: publicTokenData.publicToken,
+        maxReconnectAttempts: 3,
+        reconnectDelay: 1000
+      });
+
+      // Set up event listeners
+      service.on('connectionChange', (isConnected: boolean) => {
+        setWsPublicStatus(isConnected ? 'connected' : 'disconnected');
+        addWsMessage('connection', { 
+          status: isConnected ? 'connected' : 'disconnected', 
+          deviceId: publicTokenData.deviceId 
+        }, 'public');
+      });
+
+      service.on('message', (data: any) => {
+        console.log('Public WebSocket message:', data);
+        addWsMessage('message', data, 'public');
+        
+        // Handle leaderboard updates automatically
+        if (data.type === 'leaderboard_update' && data.leaderboard) {
+          const leaderboardResponse: LeaderboardResponse = {
+            gameId: data.gameId,
+            timestamp: data.timestamp,
+            totalPlayers: data.totalPlayers || data.leaderboard.length,
+            leaderboard: data.leaderboard
+          };
+          setLeaderboard(leaderboardResponse);
+          console.log('Updated leaderboard from WebSocket (public):', leaderboardResponse);
+        }
+      });
+
+      service.on('error', (error: Error) => {
+        console.error('Public WebSocket error:', error);
+        setWsPublicStatus('error');
+        addWsError(`Public WebSocket error: ${error.message}`);
+      });
+
+      service.on('statusUpdate', (status: string) => {
+        addWsStatus(`Public WebSocket: ${status}`);
+      });
+
+      // Store service reference
+      wsPublicRef.current = service;
+      setWsPublicService(service);
+
+      // Connect
+      await service.connect();
+      
+      // Subscribe to game updates if connected and we have a game
+      if (service.isConnected() && sessions.length > 0) {
+        service.sendMessage({
+          action: 'subscribe',
+          gameId: sessions[0].currentGameId
+        });
+      }
+
+    } catch (error) {
+      console.error('Failed to create public WebSocket:', error);
+      setWsPublicStatus('error');
+      addWsError(`Failed to create public WebSocket: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
+  const disconnectUserWebSocket = () => {
+    if (wsUserRef.current) {
+      wsUserRef.current.disconnect();
+      wsUserRef.current = null;
+      setWsUserService(null);
+    }
+    setWsUserStatus('disconnected');
+  };
+
+  const disconnectPublicWebSocket = () => {
+    if (wsPublicRef.current) {
+      wsPublicRef.current.disconnect();
+      wsPublicRef.current = null;
+      setWsPublicService(null);
+    }
+    setWsPublicStatus('disconnected');
+  };
+
+  const clearWebSocketLogs = () => {
+    setWsMessages([]);
+    setWsErrors([]);
+    setWsStatusMessages([]);
+  };
+
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'connected': return 'success';
+      case 'connecting': return 'warning';
+      case 'error': return 'danger';
+      default: return 'secondary';
+    }
+  };
 
   const clearLocalStorage = () => {
     localStorage.removeItem("buzzword-bingo-session");
@@ -601,6 +904,223 @@ Are you absolutely sure you want to proceed?`;
                     </p>
                   </div>
                 )}
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* WebSocket Testing */}
+        <Row className="mb-4">
+          <Col xs={12}>
+            <Card className="border-0 shadow-sm" style={{ borderRadius: "15px" }}>
+              <Card.Header 
+                className="border-0 py-3"
+                style={{ backgroundColor: "#059669", borderRadius: "15px 15px 0 0" }}
+              >
+                <h5 className="mb-0 text-white fw-bold">
+                  🔌 4.5. WebSocket Connection Testing
+                </h5>
+              </Card.Header>
+              <Card.Body>
+                {/* Public Token Generation */}
+                <Row className="mb-4">
+                  <Col xs={12}>
+                    <h6 className="fw-bold mb-3">📱 Public Token (Status Boards)</h6>
+                    <div className="d-flex gap-2 mb-3">
+                      <Button 
+                        onClick={generatePublicToken} 
+                        disabled={loading}
+                        variant="outline-success"
+                        size="sm"
+                      >
+                        {loading ? "Generating..." : "Generate Public Token"}
+                      </Button>
+                      {publicTokenData && (
+                        <Badge bg="success">Token Generated</Badge>
+                      )}
+                    </div>
+                    {publicTokenData && (
+                      <Alert variant="success" className="mb-3">
+                        <div className="mb-2">
+                          <strong>Device ID:</strong> {publicTokenData.deviceId}
+                        </div>
+                        <div className="mb-2">
+                          <strong>Permissions:</strong> {publicTokenData.permissions.join(', ')}
+                        </div>
+                        <div className="mb-2">
+                          <strong>Token:</strong> <code style={{ fontSize: '0.75rem', wordBreak: 'break-all' }}>
+                            {publicTokenData.publicToken.substring(0, 50)}...
+                          </code>
+                        </div>
+                      </Alert>
+                    )}
+                  </Col>
+                </Row>
+
+                {/* WebSocket Connections */}
+                <Row>
+                  {/* User WebSocket */}
+                  <Col xs={12} md={6} className="mb-3">
+                    <Card className="h-100">
+                      <Card.Header className="d-flex justify-content-between align-items-center">
+                        <span className="fw-bold">👤 User WebSocket</span>
+                        <Badge bg={getStatusBadgeVariant(wsUserStatus)}>
+                          {wsUserStatus.toUpperCase()}
+                        </Badge>
+                      </Card.Header>
+                      <Card.Body>
+                        <div className="d-flex gap-2 mb-3">
+                          <Button 
+                            onClick={connectUserWebSocket} 
+                            disabled={loading || !activeSession || wsUserStatus === 'connected'}
+                            variant="outline-primary"
+                            size="sm"
+                          >
+                            Connect
+                          </Button>
+                          <Button 
+                            onClick={disconnectUserWebSocket} 
+                            disabled={wsUserStatus !== 'connected'}
+                            variant="outline-danger"
+                            size="sm"
+                          >
+                            Disconnect
+                          </Button>
+                        </div>
+                        {activeSession ? (
+                          <p className="mb-0 small text-muted">
+                            Active Player: <strong>{activeSession.nickname}</strong>
+                          </p>
+                        ) : (
+                          <p className="mb-0 small text-warning">
+                            ⚠️ Select an active player first
+                          </p>
+                        )}
+                      </Card.Body>
+                    </Card>
+                  </Col>
+
+                  {/* Public WebSocket */}
+                  <Col xs={12} md={6} className="mb-3">
+                    <Card className="h-100">
+                      <Card.Header className="d-flex justify-content-between align-items-center">
+                        <span className="fw-bold">🌐 Public WebSocket</span>
+                        <Badge bg={getStatusBadgeVariant(wsPublicStatus)}>
+                          {wsPublicStatus.toUpperCase()}
+                        </Badge>
+                      </Card.Header>
+                      <Card.Body>
+                        <div className="d-flex gap-2 mb-3">
+                          <Button 
+                            onClick={connectPublicWebSocket} 
+                            disabled={loading || wsPublicStatus === 'connected'}
+                            variant="outline-success"
+                            size="sm"
+                          >
+                            {!publicTokenData ? 'Generate & Connect' : 'Connect'}
+                          </Button>
+                          <Button 
+                            onClick={disconnectPublicWebSocket} 
+                            disabled={wsPublicStatus !== 'connected'}
+                            variant="outline-danger"
+                            size="sm"
+                          >
+                            Disconnect
+                          </Button>
+                        </div>
+                        {publicTokenData ? (
+                          <p className="mb-0 small text-muted">
+                            Device: <strong>{publicTokenData.deviceId.split('-')[1]}</strong>
+                          </p>
+                        ) : (
+                          <p className="mb-0 small text-warning">
+                            ⚠️ Generate public token first
+                          </p>
+                        )}
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                </Row>
+
+                {/* WebSocket Message Log */}
+                <Row className="mt-4">
+                  <Col xs={12}>
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <h6 className="mb-0 fw-bold">📋 Real-Time Message Log</h6>
+                      <Button 
+                        onClick={clearWebSocketLogs} 
+                        variant="outline-secondary"
+                        size="sm"
+                      >
+                        Clear Logs
+                      </Button>
+                    </div>
+
+                    {/* Error Messages */}
+                    {wsErrors.length > 0 && (
+                      <Alert variant="danger" className="mb-3">
+                        <div className="fw-bold mb-2">🚨 Recent Errors:</div>
+                        {wsErrors.slice(0, 3).map((error, index) => (
+                          <div key={index} className="small">
+                            • {error}
+                          </div>
+                        ))}
+                      </Alert>
+                    )}
+
+                    {/* Status Messages */}
+                    {wsStatusMessages.length > 0 && (
+                      <Alert variant="info" className="mb-3">
+                        <div className="fw-bold mb-2">ℹ️ Connection Status:</div>
+                        {wsStatusMessages.slice(0, 3).map((status, index) => (
+                          <div key={index} className="small">
+                            • {status}
+                          </div>
+                        ))}
+                      </Alert>
+                    )}
+
+                    {/* Message List */}
+                    <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                      {wsMessages.length > 0 ? (
+                        <ListGroup>
+                          {wsMessages.slice(0, 20).map((message, index) => (
+                            <ListGroup.Item 
+                              key={index}
+                              className="d-flex justify-content-between align-items-start"
+                            >
+                              <div className="flex-grow-1">
+                                <div className="d-flex align-items-center gap-2 mb-1">
+                                  <Badge bg={message.source === 'user' ? 'primary' : 'success'}>
+                                    {message.source}
+                                  </Badge>
+                                  <Badge bg="secondary">{message.type}</Badge>
+                                  <small className="text-muted">
+                                    {new Date(message.timestamp).toLocaleTimeString()}
+                                  </small>
+                                </div>
+                                <pre className="mb-0 small" style={{ 
+                                  fontSize: '0.75rem', 
+                                  backgroundColor: '#f8f9fa',
+                                  padding: '0.5rem',
+                                  borderRadius: '4px',
+                                  maxHeight: '100px',
+                                  overflowY: 'auto'
+                                }}>
+                                  {JSON.stringify(message.data, null, 2)}
+                                </pre>
+                              </div>
+                            </ListGroup.Item>
+                          ))}
+                        </ListGroup>
+                      ) : (
+                        <Alert variant="info" className="text-center">
+                          No WebSocket messages yet. Connect to see real-time updates!
+                        </Alert>
+                      )}
+                    </div>
+                  </Col>
+                </Row>
               </Card.Body>
             </Card>
           </Col>

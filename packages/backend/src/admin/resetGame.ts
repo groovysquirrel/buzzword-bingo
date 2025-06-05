@@ -3,7 +3,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { ScanCommand, BatchWriteCommand, UpdateCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { APIGatewayProxyEvent } from "aws-lambda";
 import { handler } from "../lib/handler";
-import { addEvent } from "../sseLeaderboard";
+import { addEvent } from "../lib/gameEvents";
 
 const dynamoDb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 

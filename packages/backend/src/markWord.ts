@@ -5,7 +5,7 @@ import { APIGatewayProxyEvent } from "aws-lambda";
 import { handler } from "./lib/handler";
 import { BingoProgress } from "./lib/types";
 import { extractSessionFromHeaders } from "./lib/token";
-import { addEvent } from "./sseLeaderboard";
+import { addEvent } from "./lib/gameEvents";
 
 const dynamoDb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 

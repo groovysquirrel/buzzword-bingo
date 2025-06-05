@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Button, Alert, Modal } from 'react-bootstrap';
 
 // Import our refactored hooks and components
-import { useGameSession, useBingoGame, useLeaderboard } from '../hooks';
+import { useGameSession, useBingoGame, useWebSocketLeaderboard } from '../hooks';
 import { BingoGrid } from '../components/BingoGrid';
 import { PlayerStatus } from '../components/PlayerStatus';
 import { MarkWordResponse } from '../types/game';
@@ -19,15 +19,24 @@ export default function BingoGame() {
   
   // Custom hooks handle all the complex logic that was previously in this component
   const { session, loading: sessionLoading, gameStatusMessage } = useGameSession();
-  const { 
-    bingoCard, 
-    loading: gameLoading, 
-    markingWord, 
-    error, 
+  const {
+    bingoCard,
+    loading: gameLoading,
+    markingWord,
+    error: gameError,
     markWord,
-    clearError 
+    clearError: clearGameError
   } = useBingoGame(session);
-  const { getCurrentPlayerRank } = useLeaderboard(session);
+
+  // Get current player rank using WebSocket leaderboard (more efficient than SSE)
+  const { leaderboard } = useWebSocketLeaderboard(session);
+  const getCurrentPlayerRank = () => {
+    if (!leaderboard || !session) return null;
+    const userIndex = leaderboard.leaderboard.findIndex(
+      entry => entry.sessionId === session.sessionId
+    );
+    return userIndex !== -1 ? userIndex + 1 : null;
+  };
   
   // Local state for BINGO celebration modal
   const [showBingoModal, setShowBingoModal] = useState(false);
@@ -136,14 +145,14 @@ export default function BingoGame() {
         )}
 
         {/* Error Alert - now with dismiss functionality */}
-        {error && (
+        {gameError && (
           <Alert 
             variant="danger" 
             className="mb-4" 
             dismissible 
-            onClose={clearError}
+            onClose={clearGameError}
           >
-            {error}
+            {gameError}
           </Alert>
         )}
 

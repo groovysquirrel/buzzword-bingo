@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { API } from 'aws-amplify';
 import { Container, Row, Col, Card, Badge, ListGroup } from 'react-bootstrap';
+import { API } from 'aws-amplify';
 
 // Import our types, hooks, and components for consistency
 import { LeaderboardTable } from '../components/Leaderboard';
-import { useLeaderboard } from '../hooks';
+import { useWebSocketLeaderboard } from '../hooks/useWebSocketLeaderboard';
+import { GameEvent } from '../types/game';
 
 interface ActivityEvent {
   id: string;
@@ -22,20 +23,22 @@ interface CurrentGameResponse {
   error?: string;
 }
 
+// Union type for events
+type UnifiedEvent = GameEvent | ActivityEvent;
+
 /**
  * StatusScreen Container Component
  * 
  * A public status board designed for conference displays.
- * Shows real-time leaderboard and activity feed.
+ * Shows real-time leaderboard and activity feed via WebSocket.
  * 
- * Now includes game selection dropdown and uses the unified useUnifiedLeaderboard hook
- * which ensures identical data structure and behavior as the main leaderboard page.
+ * Now exclusively uses WebSocket for better serverless performance.
  */
 export default function StatusScreen() {
   const [gameId, setGameId] = useState<string | null>(null);
   const [gameStatus, setGameStatus] = useState<string>("ready");
 
-  // Use our unified leaderboard hook which works identically for both authenticated and public access
+  // Use WebSocket for real-time updates
   const { 
     leaderboard, 
     events,
@@ -43,29 +46,49 @@ export default function StatusScreen() {
     error,
     isConnected,
     lastUpdate
-  } = useLeaderboard(gameId);
+  } = useWebSocketLeaderboard(gameId);
+
+  /**
+   * Normalize event to common format
+   */
+  const normalizeEvent = (event: UnifiedEvent): ActivityEvent => {
+    if ('eventId' in event) {
+      // GameEvent format
+      return {
+        id: event.eventId,
+        type: event.eventType,
+        data: event.eventData || {},
+        timestamp: event.timestamp
+      };
+    } else {
+      // Already ActivityEvent format
+      return event as ActivityEvent;
+    }
+  };
 
   /**
    * Format activity event into human-readable message
    */
-  const formatEventMessage = (event: ActivityEvent): string => {
-    switch (event.type) {
+  const formatEventMessage = (event: UnifiedEvent): string => {
+    const normalized = normalizeEvent(event);
+    
+    switch (normalized.type) {
       case "player_joined":
-        return `${event.data.nickname} joined!`;
+        return `${normalized.data.nickname} joined!`;
       case "word_marked":
-        return `${event.data.nickname} heard "${event.data.word}"`;
+        return `${normalized.data.nickname} heard "${normalized.data.word}"`;
       case "bingo_completed":
-        return `${event.data.nickname} got BINGO!`;
+        return `${normalized.data.nickname} got BINGO!`;
       case "game_reset":
-        return `Game ${event.data.gameId} was reset (${event.data.progressRecordsCleared} progress records cleared)`;
+        return `Game ${normalized.data.gameId} was reset (${normalized.data.progressRecordsCleared} progress records cleared)`;
       case "new_game":
-        return `New game started: ${event.data.newGameId} (replaced ${event.data.previousGameId})`;
+        return `New game started: ${normalized.data.newGameId} (replaced ${normalized.data.previousGameId})`;
       case "game_started":
-        return `New game started: ${event.data.gameId}`;
+        return `New game started: ${normalized.data.gameId}`;
       case "game_ended":
-        return `Game ended - Winner: ${event.data.winner || "No winner"}`;
+        return `Game ended - Winner: ${normalized.data.winner || "No winner"}`;
       default:
-        return `${event.type}: ${JSON.stringify(event.data)}`;
+        return `${normalized.type}: ${JSON.stringify(normalized.data)}`;
     }
   };
 
@@ -363,9 +386,6 @@ Are you sure you want to pause the game?`;
         <Container>
           <Row className="align-items-center">
             <Col xs={12} className="text-center">
-              <h1 className="h4 fw-bold mb-0 text-white">
-                🐝 Buzzword Bingo Status Board
-              </h1>
             </Col>
           </Row>
           <Row className="align-items-center justify-content-center mt-2">
@@ -470,9 +490,11 @@ Are you sure you want to pause the game?`;
               >
                 {events.length > 0 ? (
                   <ListGroup variant="flush">
-                    {events.map((event, index) => (
+                    {events.map((event, index) => {
+                      const normalized = normalizeEvent(event);
+                      return (
                       <ListGroup.Item 
-                        key={event.id}
+                          key={normalized.id}
                         className="px-4 py-3"
                         style={{
                           backgroundColor: index % 2 === 0 ? "#FEFCE8" : "white",
@@ -487,29 +509,30 @@ Are you sure you want to pause the game?`;
                               height: "32px",
                               borderRadius: "50%",
                               backgroundColor: "#FEF3C7",
-                              color: getEventColor(event.type),
+                                color: getEventColor(normalized.type),
                               fontSize: "14px"
                             }}
                           >
-                            {getEventIcon(event.type)}
+                              {getEventIcon(normalized.type)}
                           </div>
                           <div className="flex-grow-1 min-w-0">
                             <div 
                               className="fw-semibold mb-1"
                               style={{ 
-                                color: getEventColor(event.type),
+                                  color: getEventColor(normalized.type),
                                 fontSize: "14px"
                               }}
                             >
                               {formatEventMessage(event)}
                             </div>
                             <small className="text-muted">
-                              {formatTime(event.timestamp)}
+                                {formatTime(normalized.timestamp)}
                             </small>
                           </div>
                         </div>
                       </ListGroup.Item>
-                    ))}
+                      );
+                    })}
                   </ListGroup>
                 ) : (
                   <div className="text-center py-5 text-muted">

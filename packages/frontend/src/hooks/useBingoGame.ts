@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { API } from 'aws-amplify';
 import { SessionInfo, BingoCard, MarkWordResponse } from '../types/game';
 
@@ -7,9 +7,9 @@ import { SessionInfo, BingoCard, MarkWordResponse } from '../types/game';
  * 
  * Handles:
  * - Loading bingo card from API
- * - Marking words
- * - Auto-refreshing game state
+ * - Marking words with immediate local updates
  * - Error handling
+ * - Real-time state via WebSocket (no polling needed)
  * 
  * This encapsulates all bingo game logic so components
  * focus on rendering and user interaction.
@@ -19,7 +19,6 @@ export function useBingoGame(session: SessionInfo | null) {
   const [loading, setLoading] = useState(true);
   const [markingWord, setMarkingWord] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load bingo card when session is available
   useEffect(() => {
@@ -28,20 +27,10 @@ export function useBingoGame(session: SessionInfo | null) {
     }
   }, [session]);
 
-  // Auto-refresh bingo card state every 10 seconds
-  useEffect(() => {
-    if (!session) return;
-    
-    intervalRef.current = setInterval(() => {
-      loadBingoCard(session, false);
-    }, 10000);
-    
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [session]);
+  // Note: Removed auto-refresh polling since we now have:
+  // 1. WebSocket real-time updates for leaderboard changes
+  // 2. Local state updates when marking words for immediate feedback
+  // 3. No need to poll for bingo card changes every 10 seconds
 
   /**
    * Load bingo card from the API

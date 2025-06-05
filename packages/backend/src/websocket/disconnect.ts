@@ -25,7 +25,7 @@ export async function main(event: APIGatewayProxyEvent) {
     await dynamoDb.send(new DeleteCommand({
       TableName: Resource.Events.name,
       Key: {
-        id: `connection-${connectionId}`,
+        eventId: `connection-${connectionId}`,
       },
     }));
 

@@ -1,13 +1,18 @@
 import { Resource } from "sst";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { ScanCommand, PutCommand, QueryCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import { APIGatewayProxyEvent } from "aws-lambda";
-import { Player, BingoProgress, LeaderboardEntry, Event } from "./lib/types";
+import { ScanCommand, PutCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { Player, BingoProgress, LeaderboardEntry, Event } from "./types";
+import { broadcastGameEvent, broadcastLeaderboardUpdate } from "../websocket/broadcast";
 
 const dynamoDb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 let eventIdCounter = Date.now(); // Use timestamp-based counter
 
+/**
+ * Add a game event and automatically broadcast via WebSocket
+ * 
+ * This replaces the old SSE-based event system with WebSocket broadcasting
+ */
 export async function addEvent(type: string, data: any) {
   const now = new Date();
   const timestamp = now.toISOString();
@@ -22,12 +27,29 @@ export async function addEvent(type: string, data: any) {
   };
 
   try {
+    // Store event in database
     await dynamoDb.send(new PutCommand({
       TableName: Resource.Events.name,
       Item: event,
     }));
     
     console.log("Event stored:", event);
+
+    // 🚀 NEW: Automatic WebSocket broadcasting
+    const gameId = data.gameId || "unknown";
+    await broadcastGameEvent(gameId, type, data);
+
+    // 🚀 NEW: Broadcast updated leaderboard for key events
+    if (["word_marked", "player_joined", "bingo_completed"].includes(type)) {
+      try {
+        const updatedLeaderboard = await getCurrentLeaderboard(gameId);
+        await broadcastLeaderboardUpdate(gameId, updatedLeaderboard);
+        console.log("Broadcasted leaderboard update via WebSocket");
+      } catch (error) {
+        console.error("Failed to broadcast leaderboard update:", error);
+      }
+    }
+
     return event;
   } catch (error) {
     console.error("Failed to store event:", error);
@@ -35,7 +57,10 @@ export async function addEvent(type: string, data: any) {
   }
 }
 
-async function getRecentEvents(limit: number = 10): Promise<Event[]> {
+/**
+ * Get recent events for activity feed
+ */
+export async function getRecentEvents(limit: number = 10): Promise<Event[]> {
   try {
     // Get all events and sort by timestamp (since we don't have a perfect GSI setup for this)
     const result = await dynamoDb.send(new ScanCommand({
@@ -54,7 +79,12 @@ async function getRecentEvents(limit: number = 10): Promise<Event[]> {
   }
 }
 
-async function getCurrentLeaderboard(gameId: string): Promise<LeaderboardEntry[]> {
+/**
+ * Get current leaderboard for a game
+ * 
+ * This function is used both for API responses and WebSocket broadcasting
+ */
+export async function getCurrentLeaderboard(gameId: string): Promise<LeaderboardEntry[]> {
   // Get all players
   const playersResult = await dynamoDb.send(new ScanCommand({
     TableName: Resource.Players.name,
@@ -107,42 +137,4 @@ async function getCurrentLeaderboard(gameId: string): Promise<LeaderboardEntry[]
   });
 
   return leaderboard;
-}
-
-async function sseLeaderboard(event: APIGatewayProxyEvent) {
-  const gameId = event.pathParameters?.gameId;
-  if (!gameId) {
-    throw new Error("Game ID is required");
-  }
-
-  try {
-    const [leaderboard, recentEvents] = await Promise.all([
-      getCurrentLeaderboard(gameId),
-      getRecentEvents(10)
-    ]);
-
-    const response = {
-      type: "leaderboard_update",
-      gameId,
-      timestamp: new Date().toISOString(),
-      leaderboard,
-      events: recentEvents.map(event => ({
-        id: event.eventId,
-        type: event.type,
-        data: event.data,
-        timestamp: event.timestamp,
-      })),
-    };
-    
-    return JSON.stringify(response);
-  } catch (error) {
-    console.error("SSE leaderboard error:", error);
-    return JSON.stringify({
-      type: "error",
-      error: error instanceof Error ? error.message : "Unknown error",
-      timestamp: new Date().toISOString(),
-    });
-  }
-}
-
-export const main = sseLeaderboard; 
+} 

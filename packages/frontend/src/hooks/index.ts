@@ -7,4 +7,4 @@
 
 export { useGameSession } from './useGameSession';
 export { useBingoGame } from './useBingoGame';
-export { useLeaderboard } from './useLeaderboard'; 
+export { useWebSocketLeaderboard } from './useWebSocketLeaderboard'; 
