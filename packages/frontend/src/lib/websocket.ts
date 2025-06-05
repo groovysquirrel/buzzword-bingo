@@ -130,7 +130,7 @@ export class WebSocketService extends SimpleEventEmitter {
     return this.options.url.replace(/\?.*$/, ''); // Remove query parameters for logging
   }
 
-  private handleOpen(event: Event): void {
+  private handleOpen(_event: Event): void {
     console.log('WebSocket connected successfully');
     this.connectionState = true;
     this.isConnecting = false;

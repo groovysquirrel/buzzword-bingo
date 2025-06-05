@@ -8,6 +8,7 @@ import Card from "react-bootstrap/Card";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import Alert from "react-bootstrap/Alert";
+import "./Join.css";
 
 interface JoinGameResponse {
   sessionId: string;
@@ -106,79 +107,51 @@ export default function Join() {
   // Show loading while checking for existing session
   if (checkingSession) {
     return (
-      <div 
-        className="min-vh-100 d-flex align-items-center justify-content-center"
-        style={{ 
-          background: "linear-gradient(135deg, #FEF3C7 0%, #FCD34D 100%)"
-        }}
-      >
-        <div className="text-center">
-          <div className="spinner-border text-warning mb-3" style={{ width: "3rem", height: "3rem" }}></div>
-          <h5 style={{ color: "#1F2937" }}>Checking your session...</h5>
+      <div className="join-container">
+        <div className="join-loading">
+          <div className="spinner-border text-warning"></div>
+          <h5>Checking your session...</h5>
         </div>
       </div>
     );
   }
 
   return (
-    <div 
-      className="min-vh-100 d-flex align-items-center"
-      style={{ 
-        background: "linear-gradient(135deg, #FEF3C7 0%, #FCD34D 100%)"
-      }}
-    >
-      <Container>
-        <Row className="justify-content-center">
+    <div className="join-container">
+      <Container fluid className="h-100 d-flex align-items-center justify-content-center">
+        <Row className="justify-content-center w-100">
           <Col xs={12} sm={10} md={8} lg={6} xl={5}>
-            <Card 
-              className="shadow-lg border-0 text-center"
-              style={{ borderRadius: "20px" }}
-            >
-              <Card.Body className="p-4 p-sm-5">
+            <Card className="join-card">
+              <Card.Body className="join-card-body">
                 {/* Bee Logo */}
-                <div className="mb-4">
+                <div className="mb-3">
                   <img 
-                    src="/bee.png" 
-                    alt="Buzzword Bingo Bee" 
-                    className="img-fluid"
-                    style={{ maxHeight: "80px" }}
+                    src="/buzzword_bingo_image.png" 
+                    alt="Buzzword Bingo Logo" 
+                    className="join-bee-logo img-fluid"
                   />
                 </div>
-                
-                {/* Title */}
-                <h1 
-                  className="h2 fw-bold mb-4"
-                  style={{ color: "#1F2937" }}
-                >
-                  JOIN BUZZWORD BINGO @ LIVE!
-                </h1>
-                
+
                 {/* Join Form */}
                 <Form onSubmit={handleJoin}>
-                  <Form.Group className="mb-4">
-
+                  <Form.Group className="mb-3">
                     <Form.Control
                       type="text"
                       value={nickname}
                       onChange={(e) => setNickname(e.target.value)}
-                      placeholder="Enter a nickname"
+                      placeholder="Enter your name to join"
                       size="lg"
                       maxLength={20}
-                      className="text-center fw-semibold"
-                      style={{ 
-                        borderColor: "#F59E0B",
-                        borderWidth: "2px",
-                        fontSize: "1.25rem"
-                      }}
+                      className="join-form-control"
                       disabled={loading}
                     />
-                    <Form.Text className="text-muted">
+                    <Form.Text className="text-muted mt-2">
                       Max 20 characters
                     </Form.Text>
                   </Form.Group>
                   
                   {error && (
-                    <Alert variant="danger" className="mb-4">
+                    <Alert variant="danger" className="mb-3">
                       {error}
                     </Alert>
                   )}
@@ -187,31 +160,26 @@ export default function Join() {
                     type="submit"
                     size="lg"
                     disabled={loading || !nickname.trim()}
-                    className="w-100 fw-bold py-3"
-                    style={{ 
-                      backgroundColor: "#F59E0B", 
-                      borderColor: "#F59E0B",
-                      fontSize: "1.25rem",
-                      borderRadius: "12px"
-                    }}
+                    className="join-button w-100"
                   >
                     {loading ? (
                       <>
                         <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        Joining...
+                        Joining Game...
                       </>
                     ) : (
-                      "JOIN"
+                      "JOIN THE GAME"
                     )}
                   </Button>
                 </Form>
                 
-                {/* Info */}
-                <div className="mt-4 pt-3 border-top">
-                  <small className="text-muted">
-                    🎯 Listen for buzzwords during the presentation<br/>
-                    🏆 Get 5 in a row to win BINGO!
-                  </small>
+                {/* Professional Info */}
+                <div className="join-info-section">
+                  <p className="join-info-text">
+                    <span className="emoji">🎯</span>Listen for buzzwords<br/>
+                    <span className="emoji">⚡</span>Compete in real-time<br/>
+                    <span className="emoji">🏆</span>Claim your prize!
+                  </p>
                 </div>
               </Card.Body>
             </Card>

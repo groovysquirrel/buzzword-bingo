@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Button, Alert } from 'react-bootstrap';
 
@@ -19,11 +18,10 @@ export default function Leaderboard() {
   const { session, loading: sessionLoading, gameStatusMessage } = useGameSession();
   const {
     leaderboard,
-    events,
     loading: leaderboardLoading,
     error,
     isConnected,
-    lastUpdate,
+    
     clearError
   } = useWebSocketLeaderboard(session);
 

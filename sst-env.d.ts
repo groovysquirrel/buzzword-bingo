@@ -62,10 +62,6 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Function"
     }
-    "SubmitBingoFunction": {
-      "name": string
-      "type": "sst.aws.Function"
-    }
     "TestFunction": {
       "name": string
       "type": "sst.aws.Function"
