@@ -42,28 +42,93 @@ function App() {
 
   return (
     !isAuthenticating && (
-      <div className="App container py-3">
-        <Navbar collapseOnSelect bg="light" expand="md" className="mb-3 px-3">
+      <div className="App">
+        <Navbar 
+          collapseOnSelect 
+          expand="lg" 
+          className="mb-0 px-3 shadow-sm"
+          style={{ 
+            backgroundColor: "#FCD34D", 
+            borderBottom: "3px solid #F59E0B"
+          }}
+        >
           <LinkContainer to="/">
-            <Navbar.Brand className="fw-bold text-muted">Scratch</Navbar.Brand>
+            <Navbar.Brand className="d-flex align-items-center">
+              <img 
+                src="/bee.png" 
+                alt="Buzzword Bingo" 
+                height="40" 
+                className="me-2"
+              />
+              <span 
+                className="fw-bold"
+                style={{ 
+                  color: "#1F2937",
+                  fontSize: "1.5rem",
+                  fontWeight: "700"
+                }}
+              >
+                Buzzword Bingo
+              </span>
+            </Navbar.Brand>
           </LinkContainer>
-          <Navbar.Toggle />
-          <Navbar.Collapse className="justify-content-end">
-            <Nav activeKey={window.location.pathname}>
+          <Navbar.Toggle 
+            aria-controls="basic-navbar-nav"
+            style={{ borderColor: "#1F2937" }}
+          />
+          <Navbar.Collapse id="basic-navbar-nav" className="justify-content-end">
+            <Nav>
+              <LinkContainer to="/status">
+                <Nav.Link 
+                  className="fw-semibold me-2"
+                  style={{ color: "#1F2937" }}
+                >
+                  📊 Status Board
+                </Nav.Link>
+              </LinkContainer>
+              <LinkContainer to="/bingo-test">
+                <Nav.Link 
+                  className="fw-semibold me-2"
+                  style={{ color: "#1F2937" }}
+                >
+                  🔧 Test Interface
+                </Nav.Link>
+              </LinkContainer>
               {isAuthenticated ? (
                 <>
-                  <LinkContainer to="/settings">
-                    <Nav.Link>Settings</Nav.Link>
+                  <LinkContainer to="/admin">
+                    <Nav.Link 
+                      className="fw-semibold me-2"
+                      style={{ color: "#1F2937" }}
+                    >
+                      ⚙️ Admin
+                    </Nav.Link>
                   </LinkContainer>
-                  <Nav.Link onClick={handleLogout}>Logout</Nav.Link>
+                  <LinkContainer to="/settings">
+                    <Nav.Link 
+                      className="fw-semibold me-2"
+                      style={{ color: "#1F2937" }}
+                    >
+                      Settings
+                    </Nav.Link>
+                  </LinkContainer>
+                  <Nav.Link 
+                    onClick={handleLogout}
+                    className="fw-semibold"
+                    style={{ color: "#1F2937" }}
+                  >
+                    Logout
+                  </Nav.Link>
                 </>
               ) : (
                 <>
-                  <LinkContainer to="/signup">
-                    <Nav.Link>Signup</Nav.Link>
-                  </LinkContainer>
                   <LinkContainer to="/login">
-                    <Nav.Link>Login</Nav.Link>
+                    <Nav.Link 
+                      className="fw-semibold"
+                      style={{ color: "#1F2937" }}
+                    >
+                      Login
+                    </Nav.Link>
                   </LinkContainer>
                 </>
               )}

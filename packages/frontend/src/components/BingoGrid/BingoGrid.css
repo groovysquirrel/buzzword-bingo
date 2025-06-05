@@ -1,0 +1,188 @@
+/**
+ * BingoGrid Styles
+ * 
+ * Responsive bingo grid using CSS Grid for optimal layout
+ * Uses BEM naming convention for maintainable CSS
+ */
+
+/* Grid Container */
+.bingo-grid-container {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.bingo-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  gap: 2px;
+  background-color: #F59E0B;
+  border: 3px solid #F59E0B;
+  border-radius: 8px;
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  width: 100%;
+}
+
+.bingo-row {
+  display: contents; /* Use grid container directly */
+}
+
+/* Bingo Cell Base Styles */
+.bingo-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background-color: white;
+  border: none;
+  color: #1F2937;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 4px;
+  position: relative;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  transition: all 0.2s ease;
+  min-height: 0; /* Allow grid to control height */
+}
+
+/* Cell States */
+.bingo-cell--clickable {
+  cursor: pointer;
+}
+
+.bingo-cell--clickable:hover {
+  background-color: #FEF3C7;
+  transform: scale(0.98);
+}
+
+.bingo-cell--clickable:active {
+  transform: scale(0.95);
+}
+
+.bingo-cell--marked {
+  background-color: #10B981 !important;
+  color: white !important;
+}
+
+.bingo-cell--free {
+  background-color: #1F2937 !important;
+  color: white !important;
+  cursor: default;
+}
+
+.bingo-cell--marking {
+  opacity: 0.7;
+}
+
+/* Cell Content */
+.bingo-cell__text {
+  transition: opacity 0.2s ease;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.bingo-cell__text--hidden {
+  opacity: 0;
+}
+
+.bingo-cell__spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Grid Hint */
+.bingo-grid-hint {
+  margin-top: 0.5rem;
+}
+
+.bingo-grid-placeholder {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #D1D5DB;
+  border-radius: 8px;
+  background-color: #F9FAFB;
+}
+
+/* Responsive Breakpoints */
+
+/* Mobile phones (portrait) */
+@media (max-width: 576px) {
+  .bingo-cell {
+    font-size: 0.6rem;
+    padding: 2px;
+  }
+  
+  .bingo-grid {
+    border-width: 2px;
+    gap: 1px;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 400px) {
+  .bingo-cell {
+    font-size: 0.55rem;
+    padding: 1px;
+  }
+}
+
+/* Tablets and small laptops */
+@media (min-width: 768px) {
+  .bingo-cell {
+    font-size: 0.75rem;
+    padding: 6px;
+  }
+}
+
+/* Desktop and larger screens */
+@media (min-width: 992px) {
+  .bingo-cell {
+    font-size: 0.8rem;
+    padding: 8px;
+  }
+  
+  .bingo-grid {
+    gap: 3px;
+  }
+}
+
+/* Focus styles for accessibility */
+.bingo-cell:focus {
+  outline: 2px solid #3B82F6;
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .bingo-cell {
+    border: 1px solid #000;
+  }
+  
+  .bingo-cell--marked {
+    border: 2px solid #fff !important;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .bingo-cell {
+    transition: none;
+  }
+  
+  .bingo-cell--clickable:hover {
+    transform: none;
+  }
+  
+  .bingo-cell--clickable:active {
+    transform: none;
+  }
+} 

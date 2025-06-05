@@ -9,15 +9,35 @@ declare module "sst" {
       "type": "sst.aws.ApiGatewayV2"
       "url": string
     }
+    "BingoCards": {
+      "name": string
+      "type": "sst.aws.Dynamo"
+    }
+    "BingoProgress": {
+      "name": string
+      "type": "sst.aws.Dynamo"
+    }
+    "CompletedBingo": {
+      "name": string
+      "type": "sst.aws.Dynamo"
+    }
+    "Events": {
+      "name": string
+      "type": "sst.aws.Dynamo"
+    }
     "Frontend": {
       "type": "sst.aws.StaticSite"
       "url": string
+    }
+    "Games": {
+      "name": string
+      "type": "sst.aws.Dynamo"
     }
     "IdentityPool": {
       "id": string
       "type": "sst.aws.CognitoIdentityPool"
     }
-    "Notes": {
+    "Players": {
       "name": string
       "type": "sst.aws.Dynamo"
     }

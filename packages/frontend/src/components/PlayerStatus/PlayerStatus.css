@@ -1,0 +1,232 @@
+/**
+ * PlayerStatus Styles
+ * 
+ * Clean status display for player progress and statistics
+ * Uses BEM naming convention for maintainable CSS
+ */
+
+.player-status {
+  border-radius: 15px !important;
+}
+
+.player-status--loading {
+  background-color: #F9FAFB;
+}
+
+/* Progress Section */
+.progress-section {
+  width: 100%;
+}
+
+.progress-label {
+  font-weight: 600;
+  color: #1F2937;
+  font-size: 0.95rem;
+}
+
+.progress-text {
+  font-weight: 600;
+  color: #1F2937;
+  font-size: 0.95rem;
+}
+
+.progress-container {
+  height: 12px;
+  background-color: #E5E7EB;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #F59E0B;
+  border-radius: 6px;
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 100%
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Statistics */
+.stat-item {
+  padding: 0.5rem;
+}
+
+.stat-value {
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.stat-value--points {
+  color: #F59E0B;
+}
+
+.stat-value--progress {
+  color: #10B981;
+}
+
+.stat-value--rank {
+  color: #6B7280;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #6B7280;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+/* Responsive Design */
+
+/* Mobile phones */
+@media (max-width: 576px) {
+  .stat-value {
+    font-size: 1.25rem;
+  }
+  
+  .stat-label {
+    font-size: 0.75rem;
+  }
+  
+  .progress-label,
+  .progress-text {
+    font-size: 0.9rem;
+  }
+  
+  .progress-container {
+    height: 10px;
+  }
+  
+  .stat-item {
+    padding: 0.25rem;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 400px) {
+  .stat-value {
+    font-size: 1.1rem;
+  }
+  
+  .stat-label {
+    font-size: 0.7rem;
+  }
+  
+  .progress-label,
+  .progress-text {
+    font-size: 0.85rem;
+  }
+  
+  .progress-container {
+    height: 8px;
+  }
+}
+
+/* Tablets and larger */
+@media (min-width: 768px) {
+  .stat-value {
+    font-size: 1.75rem;
+  }
+  
+  .stat-label {
+    font-size: 0.85rem;
+  }
+  
+  .progress-label,
+  .progress-text {
+    font-size: 1rem;
+  }
+  
+  .progress-container {
+    height: 14px;
+  }
+  
+  .stat-item {
+    padding: 0.75rem;
+  }
+}
+
+/* Desktop */
+@media (min-width: 992px) {
+  .stat-value {
+    font-size: 2rem;
+  }
+  
+  .stat-label {
+    font-size: 0.9rem;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .progress-container {
+    border: 1px solid #000;
+  }
+  
+  .progress-fill {
+    border: 1px solid #000;
+  }
+  
+  .stat-value {
+    font-weight: 900;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .progress-fill {
+    transition: none;
+  }
+  
+  .progress-fill::after {
+    animation: none;
+  }
+}
+
+/* Dark mode support (if implemented) */
+@media (prefers-color-scheme: dark) {
+  .player-status--loading {
+    background-color: #1F2937;
+    color: white;
+  }
+  
+  .progress-label,
+  .progress-text {
+    color: #F9FAFB;
+  }
+  
+  .progress-container {
+    background-color: #374151;
+  }
+  
+  .stat-label {
+    color: #D1D5DB;
+  }
+} 

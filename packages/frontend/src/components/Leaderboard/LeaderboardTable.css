@@ -1,0 +1,271 @@
+/**
+ * LeaderboardTable Styles
+ * 
+ * Clean, mobile-first design for displaying player rankings
+ * Uses BEM naming convention for maintainable CSS
+ */
+
+.leaderboard-table {
+  width: 100%;
+}
+
+/* Empty State */
+.leaderboard-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  background-color: #F9FAFB;
+  border-radius: 8px;
+  border: 1px dashed #D1D5DB;
+}
+
+/* Leaderboard Items */
+.leaderboard-item {
+  transition: background-color 0.2s ease;
+  border: none !important;
+  margin-bottom: 0;
+}
+
+.leaderboard-item:hover {
+  background-color: #FEF3C7 !important;
+}
+
+.leaderboard-item--current {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%) !important;
+  color: white;
+  border: 2px solid #92400E !important;
+  border-radius: 8px !important;
+  margin: 2px 0 !important;
+}
+
+.leaderboard-item--current:hover {
+  background: linear-gradient(135deg, #D97706 0%, #B45309 100%) !important;
+}
+
+/* Item Content Layout */
+.leaderboard-item__content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0;
+}
+
+/* Rank Display */
+.leaderboard-item__rank {
+  flex-shrink: 0;
+  width: 40px;
+  text-align: center;
+}
+
+.rank-number {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #F59E0B;
+}
+
+.leaderboard-item--current .rank-number {
+  color: #FEF3C7;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Player Information */
+.leaderboard-item__player {
+  flex: 1;
+  min-width: 0; /* Allow text to truncate */
+}
+
+.player-nickname {
+  font-weight: 600;
+  font-size: 1rem;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-details {
+  margin-top: 0.25rem;
+}
+
+.leaderboard-item--current .player-details {
+  color: #FEF3C7;
+}
+
+/* Statistics */
+.leaderboard-item__stats {
+  display: flex;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.stat-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-width: 50px;
+}
+
+.stat-value {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #F59E0B;
+  line-height: 1;
+}
+
+.leaderboard-item--current .stat-value {
+  color: #FEF3C7;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #6B7280;
+  margin-top: 2px;
+}
+
+.leaderboard-item--current .stat-label {
+  color: #FEF3C7;
+  opacity: 0.8;
+}
+
+/* Progress Bar */
+.leaderboard-item__progress {
+  height: 4px;
+  background-color: #E5E7EB;
+  border-radius: 2px;
+  margin-top: 0.5rem;
+  overflow: hidden;
+}
+
+.leaderboard-item--current .leaderboard-item__progress {
+  background-color: rgba(254, 243, 199, 0.3);
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #F59E0B;
+  transition: width 0.3s ease;
+  border-radius: 2px;
+}
+
+.leaderboard-item--current .progress-bar {
+  background-color: #FEF3C7;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Footer */
+.leaderboard-footer {
+  padding: 1rem;
+  text-align: center;
+  border-top: 1px solid #E5E7EB;
+  background-color: #F9FAFB;
+}
+
+/* Responsive Design */
+
+/* Mobile phones */
+@media (max-width: 576px) {
+  .leaderboard-item__content {
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+  }
+  
+  .leaderboard-item__rank {
+    width: 35px;
+  }
+  
+  .rank-number {
+    font-size: 1rem;
+  }
+  
+  .player-nickname {
+    font-size: 0.95rem;
+  }
+  
+  .stat-group {
+    min-width: 45px;
+  }
+  
+  .stat-value {
+    font-size: 1rem;
+  }
+  
+  .stat-label {
+    font-size: 0.7rem;
+  }
+  
+  .leaderboard-item__stats {
+    gap: 0.75rem;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 400px) {
+  .leaderboard-item__content {
+    gap: 0.25rem;
+  }
+  
+  .stat-group {
+    min-width: 40px;
+  }
+  
+  .leaderboard-item__stats {
+    gap: 0.5rem;
+  }
+}
+
+/* Tablets and larger */
+@media (min-width: 768px) {
+  .leaderboard-item__content {
+    padding: 1rem 0;
+    gap: 1.5rem;  
+  }
+  
+  .leaderboard-item__rank {
+    width: 50px;
+  }
+  
+  .rank-number {
+    font-size: 1.2rem;
+  }
+  
+  .player-nickname {
+    font-size: 1.1rem;
+  }
+}
+
+/* Desktop */
+@media (min-width: 992px) {
+  .stat-group {
+    min-width: 60px;
+  }
+  
+  .leaderboard-item__stats {
+    gap: 1.5rem;
+  }
+}
+
+/* Focus styles for accessibility */
+.leaderboard-item:focus-within {
+  outline: 2px solid #3B82F6;
+  outline-offset: -2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .leaderboard-item {
+    border: 1px solid #000 !important;
+  }
+  
+  .leaderboard-item--current {
+    border: 2px solid #fff !important;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .leaderboard-item,
+  .progress-bar {
+    transition: none;
+  }
+} 

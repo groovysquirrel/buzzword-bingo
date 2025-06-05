@@ -1,2 +1,349 @@
+/* Global styles for Buzzword Bingo */
 .App {
+  background-color: #FEF3C7;
+  min-height: 100vh;
+}
+
+/* Custom navbar styles */
+.navbar-nav .nav-link {
+  transition: all 0.2s ease;
+  border-radius: 6px;
+  margin: 0 2px;
+}
+
+.navbar-nav .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Custom button styles */
+.btn-warning {
+  background-color: #F59E0B;
+  border-color: #F59E0B;
+  color: white;
+}
+
+.btn-warning:hover {
+  background-color: #D97706;
+  border-color: #D97706;
+  color: white;
+}
+
+/* Card hover effects */
+.card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Bingo Grid Styles */
+.bingo-grid {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  border: 3px solid #F59E0B;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: white;
+}
+
+.bingo-row {
+  display: flex;
+  width: 100%;
+}
+
+.bingo-cell {
+  flex: 1;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 1px solid #F59E0B;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+.bingo-cell:hover {
+  background-color: #FEF3C7 !important;
+  transform: scale(0.95);
+}
+
+.bingo-cell.marked {
+  background-color: #10B981 !important;
+  color: white !important;
+}
+
+.bingo-cell.free {
+  background-color: #1F2937 !important;
+  color: white !important;
+  cursor: default;
+}
+
+/* Mobile-specific bingo adjustments */
+@media (max-width: 576px) {
+  .bingo-cell {
+    font-size: 0.6rem;
+    padding: 2px;
+    min-height: 60px;
+  }
+  
+  .bingo-grid {
+    max-width: 100%;
+    border-width: 2px;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 400px) {
+  .bingo-cell {
+    font-size: 0.55rem;
+    min-height: 50px;
+  }
+}
+
+/* Large screens */
+@media (min-width: 992px) {
+  .bingo-cell {
+    font-size: 0.8rem;
+    padding: 8px;
+  }
+}
+
+/* Badge styles */
+.badge {
+  font-weight: 600;
+  letter-spacing: 0.025em;
+}
+
+/* List group improvements */
+.list-group-item {
+  transition: background-color 0.2s ease;
+}
+
+.list-group-item:hover {
+  background-color: #FEF3C7 !important;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .display-4 {
+    font-size: 2rem !important;
+  }
+  
+  .h2 {
+    font-size: 1.5rem !important;
+  }
+  
+  .navbar-brand img {
+    height: 35px !important;
+  }
+  
+  .navbar-brand span {
+    font-size: 1.25rem !important;
+  }
+}
+
+/* Scrollbar styling for activity feed */
+.card-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.card-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.card-body::-webkit-scrollbar-thumb {
+  background: #F59E0B;
+  border-radius: 3px;
+}
+
+.card-body::-webkit-scrollbar-thumb:hover {
+  background: #D97706;
+}
+
+/* Animation for new events */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.new-event {
+  animation: slideInRight 0.3s ease-out;
+}
+
+/* Loading state styles */
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #F59E0B;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Pulse animation for marking words */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.bingo-cell.marking {
+  animation: pulse 0.5s ease-in-out;
+}
+
+/* Status indicators */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.status-connected {
+  background-color: #10B981;
+}
+
+.status-disconnected {
+  background-color: #EF4444;
+}
+
+/* Custom container max-widths for better mobile experience */
+@media (min-width: 576px) {
+  .container {
+    max-width: 540px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 720px;
+  }
+}
+
+@media (min-width: 992px) {
+  .container {
+    max-width: 960px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .container {
+    max-width: 1140px;
+  }
+}
+
+/* Focus states for accessibility */
+.btn:focus,
+.nav-link:focus,
+.list-group-item:focus {
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+}
+
+/* Print styles */
+@media print {
+  .navbar,
+  .btn,
+  .badge {
+    display: none !important;
+  }
+  
+  .card {
+    border: 1px solid #000 !important;
+    box-shadow: none !important;
+  }
+}
+
+/* Responsive status footer */
+.status-footer {
+  min-height: 120px;
+}
+
+.status-item {
+  padding: 0.75rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.status-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0.25rem;
+}
+
+.status-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Mobile optimizations for status footer */
+@media (max-width: 576px) {
+  .status-value {
+    font-size: 1.25rem;
+  }
+  
+  .status-label {
+    font-size: 0.7rem;
+  }
+  
+  .status-item {
+    padding: 0.5rem;
+  }
+}
+
+/* Small screens */
+@media (max-width: 400px) {
+  .status-value {
+    font-size: 1.1rem;
+  }
+  
+  .status-label {
+    font-size: 0.65rem;
+  }
+}
+
+/* Large screens */
+@media (min-width: 768px) {
+  .status-value {
+    font-size: 1.75rem;
+  }
+  
+  .status-label {
+    font-size: 0.8rem;
+  }
+  
+  .status-item {
+    padding: 1rem;
+  }
 }
