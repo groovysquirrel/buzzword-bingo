@@ -58,6 +58,15 @@ export function useBingoGame(session: SessionInfo | null) {
       setError(null);
     } catch (error: any) {
       console.error('Failed to load bingo card:', error);
+      
+      // PURGE FIX: Clear invalid sessions
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        console.warn("Bingo card load failed with auth error - session likely invalid due to purge");
+        setError('Session expired. Please rejoin the game.');
+        // Let parent component handle the redirect by not setting a generic error
+        return;
+      }
+      
       setError('Failed to load your bingo card. Please try refreshing the page.');
     } finally {
       if (showLoading) {
@@ -76,6 +85,8 @@ export function useBingoGame(session: SessionInfo | null) {
       return null;
     }
 
+    console.log(`🎯 Marking word "${word}" for session ${session.sessionId} in game ${session.currentGameId}`);
+
     setMarkingWord(word);
     setError(null);
 
@@ -91,6 +102,9 @@ export function useBingoGame(session: SessionInfo | null) {
         }
       );
 
+      console.log(`✅ Mark word API response:`, result);
+      console.log(`📊 Game ID used: ${session.currentGameId}, Response game ID: ${(result as any).gameId}`);
+
       // Update the marked words locally for immediate feedback
       setBingoCard(prev => prev ? {
         ...prev,
@@ -99,7 +113,21 @@ export function useBingoGame(session: SessionInfo | null) {
 
       return result;
     } catch (error: any) {
-      console.error('Failed to mark word:', error);
+      console.error('❌ Failed to mark word:', error);
+      console.error('🔍 Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        gameId: session.currentGameId,
+        sessionId: session.sessionId
+      });
+      
+      // PURGE FIX: Handle invalid sessions
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        console.warn("Mark word failed with auth error - session likely invalid due to purge");
+        setError('Session expired. Please rejoin the game.');
+        return null;
+      }
+      
       setError(error.response?.data?.message || 'Failed to mark word. Please try again.');
       return null;
     } finally {
@@ -125,11 +153,47 @@ export function useBingoGame(session: SessionInfo | null) {
   };
 
   /**
-   * Force refresh the bingo card
+   * Call BINGO when player achieves a winning pattern
+   * @param bingoType - Type of BINGO pattern achieved
+   * @param winningWords - Array of words that formed the winning pattern
+   * @returns Promise that resolves to the BINGO response, or null if failed
    */
-  const refreshCard = () => {
-    if (session) {
-      loadBingoCard(session);
+  const callBingo = async (bingoType: string, winningWords: string[]) => {
+    if (!session || !bingoCard || markingWord) {
+      return null;
+    }
+
+    console.log(`🎯 Calling BINGO! Type: ${bingoType}, Pattern: ${winningWords.join(', ')}`);
+
+    setMarkingWord('BINGO'); // Use special marking state
+    setError(null);
+
+    try {
+      const result = await API.post(
+        'api', 
+        `/bingo/${session.currentGameId}/call`, 
+        {
+          headers: {
+            Authorization: `Bearer ${session.signedToken}`
+          },
+          body: { bingoType, winningWords }
+        }
+      );
+
+      console.log(`✅ BINGO call response:`, result);
+      return result;
+    } catch (error: any) {
+      console.error('❌ Failed to call BINGO:', error);
+      
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        setError('Session expired. Please rejoin the game.');
+        return null;
+      }
+      
+      setError(error.response?.data?.message || 'Failed to call BINGO. Please try again.');
+      return null;
+    } finally {
+      setMarkingWord(null);
     }
   };
 
@@ -139,9 +203,9 @@ export function useBingoGame(session: SessionInfo | null) {
     markingWord,
     error,
     markWord,
+    callBingo,
     calculateProgress,
     calculatePoints,
-    refreshCard,
     clearError: () => setError(null)
   };
 } 

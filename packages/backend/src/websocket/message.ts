@@ -1,9 +1,10 @@
 import { Resource } from "sst";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { GetCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { APIGatewayProxyEvent } from "aws-lambda";
 import { WebSocketManager } from "../lib/websocketManager";
 import { getCurrentLeaderboard } from "../lib/gameEvents";
+import { Game } from "../lib/types";
 
 const dynamoDb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const webSocketManager = WebSocketManager.getInstance();
@@ -64,7 +65,7 @@ async function handleSubscribe(connectionId: string, gameId: string) {
   console.log(`Connection ${connectionId} subscribed to game ${gameId}`);
   
   try {
-    // Send confirmation and initial leaderboard data
+    // Send confirmation
     await webSocketManager.sendMessage(connectionId, {
       type: "subscribed",
       gameId,
@@ -74,10 +75,57 @@ async function handleSubscribe(connectionId: string, gameId: string) {
     // Send current leaderboard immediately
     if (gameId) {
       await handleGetLeaderboard(connectionId, gameId);
+      
+      // Send current game status
+      await sendCurrentGameStatus(connectionId, gameId);
     }
   } catch (error) {
     console.error("Failed to handle subscription:", error);
   }
+}
+
+/**
+ * Send current game status to a specific connection
+ */
+async function sendCurrentGameStatus(connectionId: string, gameId: string) {
+  try {
+    // Get current game from database
+    const getResult = await dynamoDb.send(new GetCommand({
+      TableName: Resource.Games.name,
+      Key: { gameId }
+    }));
+
+    const currentGame = getResult.Item as Game;
+    if (currentGame) {
+      await webSocketManager.sendMessage(connectionId, {
+        type: 'game_state_changed',
+        gameId,
+        previousState: null, // No previous state for initial status
+        newState: currentGame.status,
+        timestamp: new Date().toISOString(),
+        reason: 'Initial game status',
+        stateDescription: getStateDescription(currentGame.status)
+      });
+      console.log(`Sent current game status (${currentGame.status}) to ${connectionId}`);
+    }
+  } catch (error) {
+    console.error("Failed to send current game status:", error);
+  }
+}
+
+/**
+ * Get user-friendly state description
+ */
+function getStateDescription(status: string): string {
+  const descriptions: Record<string, string> = {
+    open: 'Players can join the game',
+    started: 'Game is active - players can mark words',
+    paused: 'Game is temporarily paused',
+    bingo: 'BINGO called - awaiting verification', 
+    ended: 'Game completed with winner',
+    cancelled: 'Game was cancelled'
+  };
+  return descriptions[status] || status;
 }
 
 /**

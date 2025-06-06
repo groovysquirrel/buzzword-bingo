@@ -2,10 +2,10 @@ import { Resource } from "sst";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { QueryCommand, GetCommand, PutCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { APIGatewayProxyEvent } from "aws-lambda";
-import { handler } from "./lib/handler";
-import { BingoCard, BingoProgress, StoredBingoCard } from "./lib/types";
-import { extractSessionFromHeaders } from "./lib/token";
-import { generateBingoCard } from "./lib/gameUtils";
+import { handler } from "../lib/handler";
+import { BingoCard, BingoProgress, StoredBingoCard } from "../lib/types";
+import { extractSessionFromHeaders } from "../auth/token";
+import { generateBingoCard } from "../lib/gameUtils";
 
 const dynamoDb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 

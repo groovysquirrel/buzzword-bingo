@@ -90,19 +90,7 @@ function App() {
                     fontWeight: "600"
                   }}
                 >
-                  📊 Dashboard
-                </Nav.Link>
-              </LinkContainer>
-              <LinkContainer to="/bingo-test">
-                <Nav.Link 
-                  className="fw-semibold me-2"
-                  style={{ 
-                    color: "#64748b",
-                    fontSize: "0.875rem",
-                    fontWeight: "600"
-                  }}
-                >
-                  🔧 Test Suite
+                  📊 Status Board
                 </Nav.Link>
               </LinkContainer>
               {isAuthenticated ? (
@@ -116,7 +104,7 @@ function App() {
                         fontWeight: "600"
                       }}
                     >
-                      ⚙️ Administration
+                      ⚙️ Admin Dashboard
                     </Nav.Link>
                   </LinkContainer>
                   <LinkContainer to="/settings">

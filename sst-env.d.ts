@@ -17,6 +17,10 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Dynamo"
     }
+    "CallBingoFunction": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
     "CompletedBingo": {
       "name": string
       "type": "sst.aws.Dynamo"
@@ -28,6 +32,10 @@ declare module "sst" {
     "Frontend": {
       "type": "sst.aws.StaticSite"
       "url": string
+    }
+    "GameStateFunction": {
+      "name": string
+      "type": "sst.aws.Function"
     }
     "GameWebSocket": {
       "managementEndpoint": string
@@ -59,10 +67,6 @@ declare module "sst" {
       "type": "sst.aws.Dynamo"
     }
     "ResetGameFunction": {
-      "name": string
-      "type": "sst.aws.Function"
-    }
-    "TestFunction": {
       "name": string
       "type": "sst.aws.Function"
     }

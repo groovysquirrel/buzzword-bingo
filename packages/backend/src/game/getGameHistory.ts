@@ -2,8 +2,8 @@ import { Resource } from "sst";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { ScanCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { APIGatewayProxyEvent } from "aws-lambda";
-import { handler } from "./lib/handler";
-import { Game, CompletedBingo } from "./lib/types";
+import { handler } from "../lib/handler";
+import { Game, CompletedBingo } from "../lib/types";
 
 const dynamoDb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
@@ -55,8 +55,8 @@ async function getGameHistory(event: APIGatewayProxyEvent) {
 
     return JSON.stringify({
       totalGames: gameHistory.length,
-      completedGames: gameHistory.filter(g => g.status === 'complete').length,
-      activeGames: gameHistory.filter(g => g.status === 'active').length,
+      completedGames: gameHistory.filter(g => g.status === 'ended' || g.status === 'cancelled').length,
+      activeGames: gameHistory.filter(g => ['open', 'started', 'paused', 'bingo'].includes(g.status)).length,
       timestamp: new Date().toISOString(),
       history: gameHistory,
     });

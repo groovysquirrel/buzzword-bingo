@@ -40,7 +40,7 @@ export async function addEvent(type: string, data: any) {
     await broadcastGameEvent(gameId, type, data);
 
     // 🚀 NEW: Broadcast updated leaderboard for key events
-    if (["word_marked", "player_joined", "bingo_completed"].includes(type)) {
+    if (["word_marked", "player_joined", "bingo_called", "bingo_completed"].includes(type)) {
       try {
         const updatedLeaderboard = await getCurrentLeaderboard(gameId);
         await broadcastLeaderboardUpdate(gameId, updatedLeaderboard);
@@ -85,12 +85,15 @@ export async function getRecentEvents(limit: number = 10): Promise<Event[]> {
  * This function is used both for API responses and WebSocket broadcasting
  */
 export async function getCurrentLeaderboard(gameId: string): Promise<LeaderboardEntry[]> {
+  console.log(`🔍 Getting leaderboard for game: ${gameId}`);
+  
   // Get all players
   const playersResult = await dynamoDb.send(new ScanCommand({
     TableName: Resource.Players.name,
   }));
 
   const players = (playersResult.Items || []) as Player[];
+  console.log(`👥 Found ${players.length} players`);
 
   // Get all progress for this game
   const progressResult = await dynamoDb.send(new ScanCommand({
@@ -102,6 +105,7 @@ export async function getCurrentLeaderboard(gameId: string): Promise<Leaderboard
   }));
 
   const allProgress = (progressResult.Items || []) as BingoProgress[];
+  console.log(`📊 Found ${allProgress.length} progress entries for game ${gameId}`);
 
   // Group progress by sessionId
   const progressBySession = new Map<string, BingoProgress[]>();
@@ -112,7 +116,7 @@ export async function getCurrentLeaderboard(gameId: string): Promise<Leaderboard
     progressBySession.get(progress.sessionId)!.push(progress);
   }
 
-  // Create leaderboard entries
+  // Create leaderboard entries for existing players
   const leaderboard: LeaderboardEntry[] = players.map(player => {
     const playerProgress = progressBySession.get(player.sessionId) || [];
     const wordsMarked = playerProgress.length;
@@ -129,12 +133,35 @@ export async function getCurrentLeaderboard(gameId: string): Promise<Leaderboard
     };
   });
 
+  // SIMPLE FIX: Add entries for sessions that have progress but no player record
+  for (const [sessionId, sessionProgress] of progressBySession.entries()) {
+    const existingEntry = leaderboard.find(entry => entry.sessionId === sessionId);
+    if (!existingEntry) {
+      const wordsMarked = sessionProgress.length;
+      const points = wordsMarked * 10;
+      const progressPercentage = Math.round((wordsMarked / 24) * 100);
+      
+      console.log(`🔧 Adding missing player for session ${sessionId}: ${wordsMarked} words, ${points} points`);
+      
+      leaderboard.push({
+        nickname: `Player-${sessionId.slice(-8)}`, // Temporary nickname until player record is restored
+        sessionId: sessionId,
+        progressPercentage,
+        wordsMarked,
+        totalWords: 24,
+        points,
+      });
+    }
+  }
+
   // Sort by points
   leaderboard.sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points;
     if (b.progressPercentage !== a.progressPercentage) return b.progressPercentage - a.progressPercentage;
     return a.nickname.localeCompare(b.nickname);
   });
+
+  console.log(`🏆 Final leaderboard has ${leaderboard.length} entries`);
 
   return leaderboard;
 } 

@@ -2,16 +2,19 @@ import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Button, Alert } from 'react-bootstrap';
 
 // Import our refactored hooks and components
-import { useGameSession, useWebSocketLeaderboard, useBingoGame } from '../hooks';
+import { useGameSession } from '../hooks/useGameSession';
+import { useWebSocketLeaderboard } from '../hooks/useWebSocketLeaderboard';
+import { useBingoGame } from '../hooks/useBingoGame';
 import { LeaderboardTable } from '../components/Leaderboard/LeaderboardTable';
 import { PlayerStatus } from '../components/PlayerStatus';
+import { LeaderboardEntry } from '../types/game';
 import './Leaderboard.css';
 
 /**
  * Professional Performance Dashboard Container Component
  * 
  * Real-time performance tracking and analytics platform for corporate assessment participants.
- * Uses WebSocket for efficient real-time updates instead of SSE polling.
+ * Uses WebSocket for efficient real-time updates and game status information.
  */
 export default function Leaderboard() {
   const navigate = useNavigate();
@@ -19,17 +22,25 @@ export default function Leaderboard() {
   // Custom hooks handle all the complex logic that was previously in this component
   const { session, loading: sessionLoading, gameStatusMessage } = useGameSession();
   const { bingoCard, loading: gameLoading } = useBingoGame(session);
+  
+  // Use session game ID if available, otherwise use fallback
+  const effectiveGameId = session?.currentGameId || "error";
+  
   const {
     leaderboard,
     loading: leaderboardLoading,
     error,
     isConnected,
-    clearError
-  } = useWebSocketLeaderboard(session);
+    clearError,
+    gameStatus: webSocketGameStatus
+  } = useWebSocketLeaderboard(effectiveGameId);
+
+  // Use WebSocket game status
+  const effectiveGameStatus = webSocketGameStatus || "unknown";
 
   // Calculate user's rank from leaderboard data
   const userRank = leaderboard && session ? 
-    leaderboard.leaderboard.findIndex(entry => entry.sessionId === session.sessionId) + 1 : null;
+    leaderboard.leaderboard.findIndex((entry: LeaderboardEntry) => entry.sessionId === session.sessionId) + 1 : null;
 
   /**
    * Navigate back to the assessment platform
@@ -81,6 +92,7 @@ export default function Leaderboard() {
               <h1 className="leaderboard-header__title">
                 📊 Performance Analytics
                </h1>
+
             </Col>
           </Row>
         </Container>
@@ -144,8 +156,8 @@ export default function Leaderboard() {
                     currentSession={session}
                     showDetails={true}
                     isConnected={isConnected}
-                    gameStatus="active" 
-                    gameId={session?.currentGameId || leaderboard.gameId}
+                    gameStatus={effectiveGameStatus}
+                    gameId={effectiveGameId}
                   />
                 ) : (
                   <div className="leaderboard-table-card__loading">

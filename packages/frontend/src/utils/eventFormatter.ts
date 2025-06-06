@@ -1,14 +1,165 @@
 import { GameEvent } from '../types/game';
 
-interface ActivityEvent {
+/**
+ * Centralized Event Management System
+ * 
+ * This module provides a unified approach to handling all WebSocket events and game activities.
+ * It separates concerns between:
+ * 
+ * 1. EVENT TYPES: Centralized constants for all event types
+ * 2. EVENT INTERFACES: Type-safe interfaces for different event categories
+ * 3. SESSION ACTIONS: What should happen when events are received  
+ * 4. EVENT FORMATTING: How events should be displayed to users
+ * 
+ * Benefits:
+ * - Single source of truth for event handling logic
+ * - Type safety across all event processing
+ * - Consistent formatting and messaging
+ * - Easy to extend with new event types
+ * - Clear separation between events vs actions vs display
+ * 
+ * Usage:
+ * - WebSocket handlers use getSessionAction() for business logic
+ * - Display components use formatEventMessage() for user-facing text
+ * - All components import EVENT_TYPES for consistency
+ */
+
+// Centralized WebSocket Event Types
+export interface ActivityEvent {
   id: string;
   type: string;
   data: any;
   timestamp: string;
 }
 
-// Union type for events
+export interface GameStateEvent {
+  type: 'game_state_changed';
+  gameId: string;
+  previousState: string;
+  newState: string;
+  timestamp: string;
+  reason?: string;
+  winnerInfo?: {
+    sessionId: string;
+    nickname: string;
+    bingoType: string;
+    points: number;
+    secretWord: string;
+  };
+}
+
+export interface WrappedActivityEvent {
+  type: 'activity_event';
+  gameId: string;
+  timestamp: string;
+  event: ActivityEvent;
+}
+
+// Union type for all possible WebSocket events
+export type WebSocketEvent = GameStateEvent | WrappedActivityEvent;
+
+// Union type for events that can be displayed
 type UnifiedEvent = GameEvent | ActivityEvent;
+
+/**
+ * Centralized Event Type Definitions
+ */
+export const EVENT_TYPES = {
+  // Player Events
+  PLAYER_JOINED: 'player_joined',
+  WORD_MARKED: 'word_marked',
+  BINGO_CALLED: 'bingo_called',
+  BINGO_COMPLETED: 'bingo_completed',
+  
+  // Game Management Events  
+  NEW_GAME: 'new_game',
+  GAME_RESET: 'game_reset',
+  GAME_STARTED: 'game_started',
+  GAME_ENDED: 'game_ended',
+  
+  // Game State Changes
+  GAME_STATE_CHANGED: 'game_state_changed'
+} as const;
+
+export type EventType = typeof EVENT_TYPES[keyof typeof EVENT_TYPES];
+
+/**
+ * Session Management Actions - what should happen when an event is received
+ */
+export interface SessionAction {
+  type: 'SWITCH_GAME' | 'SHOW_MESSAGE' | 'RESET_PROGRESS' | 'NONE';
+  gameId?: string;
+  message?: string;
+  winnerInfo?: {
+    sessionId: string;
+    nickname: string;
+    bingoType: string;
+    points: number;
+    secretWord: string;
+  };
+}
+
+/**
+ * Centralized Event Handler - determines what action to take for each event
+ */
+export const getSessionAction = (
+  event: WebSocketEvent, 
+  currentGameId: string
+): SessionAction => {
+  // Handle direct game state changes (like Start All)
+  if (event.type === 'game_state_changed') {
+    const { gameId, newState, winnerInfo } = event;
+    
+    // Handle game ending with winner information
+    if (newState === 'ended' && winnerInfo) {
+      return {
+        type: 'SHOW_MESSAGE',
+        message: `${winnerInfo.nickname} won BINGO with ${winnerInfo.points} points!`,
+        gameId: gameId,
+        winnerInfo: winnerInfo
+      };
+    }
+    
+    // Handle regular game switches (different game ID)
+    if (newState === 'started' && gameId !== currentGameId) {
+      return {
+        type: 'SWITCH_GAME',
+        gameId,
+        message: `Game started! Switching to game ${gameId}`
+      };
+    }
+    
+    return { type: 'NONE' };
+  }
+  
+  // Handle wrapped activity events
+  if (event.type === 'activity_event') {
+    const { type: eventType, data } = event.event;
+    
+    switch (eventType) {
+      case EVENT_TYPES.NEW_GAME:
+        if (data.newGameId) {
+          return {
+            type: 'SWITCH_GAME',
+            gameId: data.newGameId,
+            message: `New game started! Switching to game ${data.newGameId}`
+          };
+        }
+        break;
+        
+      case EVENT_TYPES.GAME_RESET:
+        if (data.gameId === currentGameId) {
+          return {
+            type: 'SHOW_MESSAGE',
+            message: 'Game has been reset! Your progress has been cleared.'
+          };
+        }
+        break;
+    }
+  }
+  
+  return { type: 'NONE' };
+};
 
 /**
  * Corporate Event Formatting Utilities
@@ -42,19 +193,21 @@ export const formatEventMessage = (event: UnifiedEvent): string => {
   const normalized = normalizeEvent(event);
   
   switch (normalized.type) {
-    case "player_joined":
-      return `${normalized.data.nickname} connected to assessment platform`;
-    case "word_marked":
-      return `${normalized.data.nickname} identified corporate term: "${normalized.data.word}"`;
-    case "bingo_completed":
-      return `${normalized.data.nickname} achieved assessment completion milestone!`;
-    case "game_reset":
+    case EVENT_TYPES.PLAYER_JOINED:
+      return `${normalized.data.nickname} joined Buzzword Bingo!`;
+    case EVENT_TYPES.WORD_MARKED:
+      return `${normalized.data.nickname} heard a buzzword: "${normalized.data.word}"`;
+    case EVENT_TYPES.BINGO_CALLED:
+      return `${normalized.data.nickname} called BINGO! (${normalized.data.bingoType}) - Awaiting verification`;
+    case EVENT_TYPES.BINGO_COMPLETED:
+      return `${normalized.data.nickname} achieved assessment completion milestone! BINGO!`;
+    case EVENT_TYPES.GAME_RESET:
       return `Assessment session ${normalized.data.gameId} reset (${normalized.data.progressRecordsCleared} participant records archived)`;
-    case "new_game":
-      return `New assessment session initiated: ${normalized.data.newGameId} (superseding ${normalized.data.previousGameId})`;
-    case "game_started":
+    case EVENT_TYPES.NEW_GAME:
+      return `New assessment started: ${normalized.data.newGameId}`;
+    case EVENT_TYPES.GAME_STARTED:
       return `Assessment session commenced: ${normalized.data.gameId}`;
-    case "game_ended":
+    case EVENT_TYPES.GAME_ENDED:
       return `Assessment session concluded - Top performer: ${normalized.data.winner || "Performance analysis pending"}`;
     default:
       return `System event: ${normalized.type} - ${JSON.stringify(normalized.data)}`;
@@ -66,11 +219,12 @@ export const formatEventMessage = (event: UnifiedEvent): string => {
  */
 export const getEventIcon = (type: string): string => {
   switch (type) {
-    case "player_joined": return "👤";
-    case "word_marked": return "📊";
-    case "bingo_completed": return "🎯";
-    case "game_reset": return "🔄";
-    case "new_game": return "📈";
+    case EVENT_TYPES.PLAYER_JOINED: return "👤";
+    case EVENT_TYPES.WORD_MARKED: return "📝";
+    case EVENT_TYPES.BINGO_CALLED: return "🎯";
+    case EVENT_TYPES.BINGO_COMPLETED: return "🏆";
+    case EVENT_TYPES.GAME_RESET: return "🔄";
+    case EVENT_TYPES.NEW_GAME: return "📈";
     default: return "📋";
   }
 };
@@ -80,12 +234,14 @@ export const getEventIcon = (type: string): string => {
  */
 export const getEventColor = (type: string): string => {
   switch (type) {
-    case "game_reset":
-    case "new_game": 
+    case EVENT_TYPES.GAME_RESET:
+    case EVENT_TYPES.NEW_GAME: 
       return "#DC2626";
-    case "bingo_completed":
+    case EVENT_TYPES.BINGO_CALLED:
+      return "#F59E0B";
+    case EVENT_TYPES.BINGO_COMPLETED:
       return "#059669";
-    case "word_marked":
+    case EVENT_TYPES.WORD_MARKED:
       return "#3b82f6";
     default:
       return "#1e293b";

@@ -101,7 +101,7 @@ export interface LeaderboardResponse {
 export interface GameEvent {
   /** Unique identifier for the event */
   eventId: string;
-  /** Type of event (player_joined, word_marked, bingo_completed, etc.) */
+  /** Type of event - see EVENT_TYPES in utils/eventFormatter for available types */
   eventType: string;
   /** When the event occurred */
   timestamp: string;
@@ -143,6 +143,26 @@ export interface BingoGridProps {
   markingWord: string | null;
   /** Function called when a word is marked */
   onMarkWord: (word: string) => void;
+  /** Function called when a BINGO pattern is detected */
+  onBingoDetected?: (bingoResult: { hasBingo: boolean; bingoType?: string; winningWords?: string[] }) => void;
+  /** Current game state (open, started, paused, bingo, ended) */
+  gameStatus?: string;
+  /** Whether the grid should be disabled (non-interactive) */
+  disabled?: boolean;
+  /** Secret word to display when BINGO is achieved */
+  secretWord?: string | null;
+  /** Whether player is awaiting BINGO confirmation */
+  awaitingConfirmation?: boolean;
+  /** Function called when the "Join Next Game" button is clicked */
+  onJoinNextGame?: () => void;
+  /** Winner information for displaying game end messages */
+  winnerInfo?: {
+    sessionId: string;
+    nickname: string;
+    bingoType: string;
+    points: number;
+    secretWord: string;
+  };
 }
 
 /**

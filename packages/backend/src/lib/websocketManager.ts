@@ -66,7 +66,11 @@ export class WebSocketManager {
 
       console.log(`[WebSocket Manager] Message sent to connection: ${connectionId}`);
     } catch (error: any) {
-      if (error.statusCode === 410) {
+      // Handle various types of stale connection errors
+      if (error.statusCode === 410 || 
+          error.name === 'GoneException' || 
+          error.message?.includes('GoneException') ||
+          error.$metadata?.httpStatusCode === 410) {
         console.log(`[WebSocket Manager] Connection ${connectionId} is stale, removing`);
         await this.removeStaleConnection(connectionId);
       } else {
@@ -121,22 +125,38 @@ export class WebSocketManager {
 
       console.log(`[WebSocket Manager] Broadcasting to ${connections.length} connections`);
 
-      // Send to all connections
+      // Send to all connections with improved error handling
       const promises = connections.map(async (connection) => {
         const connectionData = connection.data;
         if (connectionData && connectionData.connectionId) {
           try {
             await this.sendMessage(connectionData.connectionId, message);
+            return { success: true, connectionId: connectionData.connectionId };
           } catch (error) {
+            // Don't throw - just log and continue with other connections
             console.error(`[WebSocket Manager] Failed to broadcast to ${connectionData.connectionId}:`, error);
+            return { success: false, connectionId: connectionData.connectionId, error };
           }
         }
+        return { success: false, connectionId: 'unknown', error: 'Invalid connection data' };
       });
 
-      await Promise.allSettled(promises);
+      const results = await Promise.allSettled(promises);
+      
+      // Log summary of broadcast results
+      const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+      const failed = results.length - successful;
+      
+      if (failed > 0) {
+        console.log(`[WebSocket Manager] Broadcast completed: ${successful} successful, ${failed} failed`);
+      } else {
+        console.log(`[WebSocket Manager] Broadcast completed successfully to all ${successful} connections`);
+      }
+      
     } catch (error) {
       console.error("[WebSocket Manager] Error in broadcast:", error);
-      throw error;
+      // Don't throw the error - log it and continue
+      // This ensures that broadcast failures don't break the main application flow
     }
   }
 } 

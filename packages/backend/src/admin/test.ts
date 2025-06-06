@@ -2,8 +2,8 @@ import { Resource } from "sst";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { ScanCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { APIGatewayProxyEvent } from "aws-lambda";
-import { handler } from "./lib/handler";
-import { verifyAnyToken } from "./lib/token";
+import { handler } from "../lib/handler";
+import { verifyAnyToken } from "../auth/token";
 
 const dynamoDb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
@@ -95,7 +95,7 @@ async function test(event: APIGatewayProxyEvent) {
     }
 
     return JSON.stringify({
-      message: "Buzzword Bingo API Test Endpoint",
+      message: "Buzzword Bingo Admin API Test Endpoint",
       timestamp: new Date().toISOString(),
       environment: {
         NODE_ENV: process.env.NODE_ENV,
@@ -112,7 +112,7 @@ async function test(event: APIGatewayProxyEvent) {
       }
     }, null, 2);
   } catch (error) {
-    console.error("Test endpoint error:", error);
+    console.error("Admin test endpoint error:", error);
     return JSON.stringify({
       error: error instanceof Error ? error.message : String(error),
       timestamp: new Date().toISOString(),

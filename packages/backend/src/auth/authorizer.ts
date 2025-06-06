@@ -1,5 +1,5 @@
 import { APIGatewayProxyWebsocketEventV2WithRequestContext } from "aws-lambda";
-import { verifyAnyToken } from "../lib/token";
+import { verifyAnyToken } from "./token";
 
 /**
  * Custom request context type matching WebSocket API Gateway structure

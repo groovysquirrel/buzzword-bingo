@@ -57,12 +57,29 @@
 }
 
 .bingo-game-header__title {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 700;
   margin-bottom: 0;
   color: #ffffff;
   letter-spacing: -0.025em;
   text-align: center;
+}
+
+.bingo-game-header__game-info {
+  text-align: center;
+  margin-top: 0.25rem;
+}
+
+.bingo-game-header__game-id {
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.1875rem 0.625rem;
+  border-radius: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  backdrop-filter: blur(4px);
 }
 
 /* === MAIN CONTENT === */
@@ -76,11 +93,74 @@
   border-color: #bfdbfe;
   color: #1e40af;
   border-radius: 8px;
-  margin-bottom: 1.5rem;
+  
 }
 
 .bingo-game-alert__icon {
   margin-right: 0.5rem;
+}
+
+/* === ACTIVITY BANNER (New subtle version) === */
+.activity-banner {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  margin-bottom: 0;
+  
+  font-size: 0.8rem;
+  color: #64748b;
+  box-shadow: none;
+}
+
+.activity-banner__icon {
+  margin-right: 0.5rem;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.activity-banner__text {
+  font-weight: 500;
+}
+
+.activity-banner__badge {
+  font-size: 0.6rem;
+  font-weight: 500;
+  padding: 0.15rem 0.4rem;
+  background-color: #94a3b8 !important;
+}
+
+/* === BINGO DETECTION ALERT === */
+.bingo-detection-alert {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  border-color: #16a34a;
+  color: #166534;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.bingo-detection-alert .btn {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.875rem;
+}
+
+/* === SECRET WORD DISPLAY === */
+.secret-word-display {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-color: #f59e0b;
+  color: #92400e;
+  border-radius: 12px;
+  border-width: 2px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.secret-word-display h4 {
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* === ASSESSMENT CARD === */
@@ -113,7 +193,7 @@
 }
 
 .bingo-game-card__body {
-  padding: 1rem;
+  padding: 0.75rem;
 }
 
 /* === PERFORMANCE BUTTON === */
@@ -202,6 +282,62 @@
   color: #374151;
 }
 
+/* === BINGO BUTTON === */
+.bingo-call-button {
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+  border: none;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 1rem;
+  color: #ffffff;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(22, 163, 74, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.bingo-call-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #15803d 0%, #16a34a 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(22, 163, 74, 0.4);
+  color: #ffffff;
+}
+
+.bingo-call-button:disabled {
+  background: linear-gradient(135deg, #9ca3af 0%, #d1d5db 100%);
+  color: #6b7280;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.bingo-call-button:focus {
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.3);
+  color: #ffffff;
+}
+
+/* === BINGO BUTTON ANIMATION === */
+.bingo-call-button--pulsing::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+  animation: pulse 2s infinite;
+  border-radius: 12px;
+}
+
+@keyframes pulse {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 /* === RESPONSIVE DESIGN === */
 
 /* Mobile Portrait */
@@ -212,6 +348,11 @@
   
   .bingo-game-header__title {
     font-size: 1rem;
+  }
+  
+  .bingo-game-header__game-id {
+    font-size: 0.625rem;
+    padding: 0.1875rem 0.625rem;
   }
   
   .bingo-game-card__body {
@@ -225,6 +366,29 @@
   
   .bingo-game-modal__title {
     font-size: 1.5rem;
+  }
+  
+  .bingo-call-button {
+    font-size: 0.9rem;
+    padding: 0.875rem 1.5rem;
+  }
+  
+  .secret-word-display h4 {
+    font-size: 1.25rem;
+  }
+  
+  .activity-banner {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.6rem;
+  }
+  
+  .activity-banner__icon {
+    font-size: 0.7rem;
+  }
+  
+  .activity-banner__badge {
+    font-size: 0.55rem;
+    padding: 0.1rem 0.3rem;
   }
 }
 

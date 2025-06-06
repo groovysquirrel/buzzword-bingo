@@ -1,12 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Card, Button, Alert, Modal } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Alert, Badge } from 'react-bootstrap';
+import { API } from 'aws-amplify';
 
 // Import our refactored hooks and components
-import { useGameSession, useBingoGame, useWebSocketLeaderboard } from '../hooks';
-import { BingoGrid } from '../components/BingoGrid';
+import { useGameSession } from '../hooks/useGameSession';
+import { useBingoGame } from '../hooks/useBingoGame';
+import { useWebSocketLeaderboard } from '../hooks/useWebSocketLeaderboard';
+import { BingoGrid, checkForBingo } from '../components/BingoGrid';
 import { PlayerStatus } from '../components/PlayerStatus';
-import { MarkWordResponse } from '../types/game';
+import { LeaderboardEntry, GameEvent } from '../types/game';
+import { formatEventMessage, normalizeEvent } from '../utils/eventFormatter';
 import './BingoGame.css';
 
 /**
@@ -14,34 +18,101 @@ import './BingoGame.css';
  * 
  * Refactored to use custom hooks, reusable components, and clean CSS classes.
  * This maintains all the original functionality while being much cleaner and more maintainable.
+ * Now uses real-time WebSocket game state updates instead of API polling.
  */
 export default function BingoGame() {
   const navigate = useNavigate();
   
   // Custom hooks handle all the complex logic that was previously in this component
-  const { session, loading: sessionLoading, gameStatusMessage } = useGameSession();
+  const { session, loading: sessionLoading, gameStatusMessage, updateSession } = useGameSession();
   const {
     bingoCard,
     loading: gameLoading,
     markingWord,
     error: gameError,
     markWord,
+    callBingo,
     clearError: clearGameError
   } = useBingoGame(session);
 
-  // Get current player rank using WebSocket leaderboard (more efficient than SSE)
-  const { leaderboard } = useWebSocketLeaderboard(session);
+  // Get current player rank and real-time game status using WebSocket leaderboard (more efficient than SSE)
+  const { leaderboard, events, gameStatus, winnerInfo } = useWebSocketLeaderboard(session);
+
+  // Use real-time WebSocket game status, defaulting to "open" if not available
+  const effectiveGameStatus = gameStatus || "open";
+
   const getCurrentPlayerRank = () => {
     if (!leaderboard || !session) return null;
     const userIndex = leaderboard.leaderboard.findIndex(
-      entry => entry.sessionId === session.sessionId
+      (entry: LeaderboardEntry) => entry.sessionId === session.sessionId
     );
     return userIndex !== -1 ? userIndex + 1 : null;
   };
   
-  // Local state for BINGO celebration modal
-  const [showBingoModal, setShowBingoModal] = useState(false);
-  const [bingoResult, setBingoResult] = useState<MarkWordResponse | null>(null);
+  // Local state for BINGO detection, celebration, and game transitions
+  const [canCallBingo, setCanCallBingo] = useState(false);
+  const [detectedBingo, setDetectedBingo] = useState<{ hasBingo: boolean; bingoType?: string; winningWords?: string[] } | null>(null);
+  const [secretWord, setSecretWord] = useState<string | null>(null);
+  const [_joiningNextGame, setJoiningNextGame] = useState(false);
+  const [hasBingoCalled, setHasBingoCalled] = useState(false); // Track if current player called BINGO
+  const [joinGameError, setJoinGameError] = useState<string | null>(null); // Error for join next game
+
+  // Check for BINGO patterns whenever marked words change
+  useEffect(() => {
+    if (bingoCard) {
+      const bingoCheck = checkForBingo(bingoCard.markedWords, bingoCard.words);
+      setCanCallBingo(bingoCheck.hasBingo);
+      if (bingoCheck.hasBingo) {
+        setDetectedBingo(bingoCheck);
+      } else {
+        setDetectedBingo(null);
+      }
+    }
+  }, [bingoCard?.markedWords]);
+
+  // Reset BINGO-related state when game changes
+  useEffect(() => {
+    if (effectiveGameStatus !== "bingo") {
+      setHasBingoCalled(false);
+      setSecretWord(null);
+    }
+  }, [effectiveGameStatus]);
+
+  /**
+   * Handle joining the next game when current game is ended
+   */
+  const handleJoinNextGame = async () => {
+    setJoiningNextGame(true);
+    try {
+      // Check for current active game via API
+      const result = await API.get("api", "/current-game", {});
+      
+      if (result.currentGameId && result.status && ['open', 'started', 'paused'].includes(result.status)) {
+        // There's an active game available - update session to join it
+        const updatedSession = {
+          ...session!,
+          currentGameId: result.currentGameId
+        };
+        
+        updateSession(updatedSession);
+        
+        // Clear any existing game state
+        setSecretWord(null);
+        setHasBingoCalled(false);
+        
+        console.log(`Joined active game: ${result.currentGameId} (status: ${result.status})`);
+      } else {
+        // No active game available
+        setJoinGameError("No active game available to join. Please wait for an admin to start a new game.");
+        console.log("No active game found when trying to join next game");
+      }
+    } catch (error) {
+      console.error('Failed to join next game:', error);
+      setJoinGameError("Unable to check for active games. Please try again later.");
+    } finally {
+      setJoiningNextGame(false);
+    }
+  };
 
   /**
    * Handle word marking with BINGO detection
@@ -50,9 +121,34 @@ export default function BingoGame() {
   const handleMarkWord = async (word: string) => {
     const result = await markWord(word);
     
+    // Don't show celebration modal for regular word marking
+    // Only show celebration after admin confirms BINGO
     if (result?.bingo) {
-      setBingoResult(result);
-      setShowBingoModal(true);
+      // This shouldn't happen during normal word marking since BINGO is called separately
+      console.log('Unexpected BINGO during word marking:', result);
+    }
+  };
+
+  /**
+   * Handle BINGO button click
+   */
+  const handleBingoCall = async () => {
+    if (!detectedBingo || !detectedBingo.hasBingo) {
+      return;
+    }
+
+    const result = await callBingo(
+      detectedBingo.bingoType || 'Unknown',
+      detectedBingo.winningWords || []
+    );
+
+    if (result && result.success) {
+      // Store the secret word and mark that this player called BINGO
+      setSecretWord(result.secretWord);
+      setHasBingoCalled(true);
+      
+      // Store result for later use but don't show modal yet
+      // The game status will change to "bingo" and the overlay will show "awaiting confirmation"
     }
   };
 
@@ -62,6 +158,16 @@ export default function BingoGame() {
   const handleLeaderboard = () => {
     navigate('/leaderboard');
   };
+
+  // Get latest activity event for banner (excluding current player's events)
+  const latestActivity = events && events.length > 0 
+    ? events.find((event: GameEvent) => {
+        // Normalize the event to get consistent data structure
+        const normalizedEvent = normalizeEvent(event);
+        const playerNickname = normalizedEvent.data?.nickname;
+        return playerNickname && playerNickname !== session?.nickname;
+      })
+    : null;
 
   // Show loading screen while session or game data loads
   if (sessionLoading || gameLoading) {
@@ -112,8 +218,13 @@ export default function BingoGame() {
           <Row className="align-items-center">
             <Col xs={12}>
               <h1 className="bingo-game-header__title">
-                Corporate Identifier: {session.nickname}
+                UserId: {session.nickname}
               </h1>
+              <div className="bingo-game-header__game-info">
+                <span className="bingo-game-header__game-id">
+                  Session: {session.currentGameId}
+                </span>
+              </div>
             </Col>
           </Row>
         </Container>
@@ -142,6 +253,18 @@ export default function BingoGame() {
           </Alert>
         )}
 
+        {/* Join Game Error Alert */}
+        {joinGameError && (
+          <Alert 
+            variant="warning" 
+            className="mb-4" 
+            dismissible 
+            onClose={() => setJoinGameError(null)}
+          >
+            {joinGameError}
+          </Alert>
+        )}
+
         {/* Assessment Grid - now using our reusable BingoGrid component */}
         <Row className="justify-content-center">
           <Col xs={12} lg={8}>
@@ -157,11 +280,38 @@ export default function BingoGame() {
                   bingoCard={bingoCard}
                   markingWord={markingWord}
                   onMarkWord={handleMarkWord}
+                  gameStatus={effectiveGameStatus}
+                  secretWord={secretWord}
+                  awaitingConfirmation={
+                    markingWord === 'BINGO' || // During API call
+                    (effectiveGameStatus === "bingo" && hasBingoCalled) // After call, awaiting admin confirmation
+                  }
+                  onJoinNextGame={handleJoinNextGame}
+                  winnerInfo={winnerInfo}
                 />
               </Card.Body>
             </Card>
           </Col>
         </Row>
+
+        {/* Latest Activity Banner - positioned below bingo card */}
+        {latestActivity && (
+          <Row className="justify-content-center mt-3">
+            <Col xs={12} lg={8}>
+              <Alert variant="light" className="activity-banner">
+                <div className="d-flex align-items-center justify-content-between">
+                  <div className="d-flex align-items-center">
+                    <span className="activity-banner__icon">📢</span>
+                    <span className="activity-banner__text">{formatEventMessage(latestActivity)}</span>
+                  </div>
+                  <Badge bg="secondary" className="activity-banner__badge">
+                    Live
+                  </Badge>
+                </div>
+              </Alert>
+            </Col>
+          </Row>
+        )}
 
         {/* Player Status - now using our reusable PlayerStatus component */}
         <Row className="justify-content-center mt-4">
@@ -174,65 +324,42 @@ export default function BingoGame() {
           </Col>
         </Row>
 
-        {/* Action Button */}
+        {/* Action Buttons */}
         <Row className="justify-content-center mt-4">
           <Col xs={12} lg={6}>
-            <Button 
-              size="lg" 
-              className="w-100 bingo-game-button"
-              onClick={handleLeaderboard}
-            >
-              View Performance Dashboard
-            </Button>
+            <div className="d-grid gap-2">
+              {/* BINGO Button */}
+              <Button 
+                size="lg" 
+                variant={canCallBingo && effectiveGameStatus === "started" ? "success" : "outline-secondary"}
+                className="w-100"
+                onClick={handleBingoCall}
+                disabled={!canCallBingo || markingWord === 'BINGO' || effectiveGameStatus !== "started"}
+              >
+                {markingWord === 'BINGO' ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" />
+                    Calling BINGO...
+                  </>
+                ) : canCallBingo && effectiveGameStatus === "started" ? (
+                  <> BINGO!</>
+                ) : (
+                  <>BINGO</>
+                )}
+              </Button>
+
+              {/* Performance Dashboard Button */}
+              <Button 
+                size="lg" 
+                className="w-100 bingo-game-button"
+                onClick={handleLeaderboard}
+              >
+                View Performance Dashboard
+              </Button>
+            </div>
           </Col>
         </Row>
       </Container>
-
-      {/* BINGO Celebration Modal */}
-      <Modal 
-        show={showBingoModal} 
-        onHide={() => setShowBingoModal(false)} 
-        centered
-      >
-        <Modal.Body className="text-center p-4">
-          <div className="bingo-game-modal__icon">🎯</div>
-          <h2 className="bingo-game-modal__title">
-            ASSESSMENT COMPLETE!
-          </h2>
-          <p className="lead bingo-game-modal__text">
-            Excellent performance, {session.nickname}!
-          </p>
-          {bingoResult && (
-            <div className="bingo-game-modal__details">
-              <p className="bingo-game-modal__detail-item">
-                <strong>Pattern Type:</strong> {bingoResult.bingoType}
-              </p>
-              <p className="bingo-game-modal__detail-item">
-                <strong>Trigger Term:</strong> {bingoResult.secretWord}
-              </p>
-              <p className="bingo-game-modal__detail-item">
-                <strong>Total Score:</strong> {bingoResult.points}
-              </p>
-            </div>
-          )}
-          <div className="d-grid gap-2">
-            <Button 
-              size="lg"
-              className="bingo-game-modal__button--primary"
-              onClick={handleLeaderboard}
-            >
-              View Performance Dashboard
-            </Button>
-            <Button 
-              variant="outline-secondary"
-              className="bingo-game-modal__button--secondary"
-              onClick={() => setShowBingoModal(false)}
-            >
-              Continue Assessment
-            </Button>
-          </div>
-        </Modal.Body>
-      </Modal>
     </div>
   );
 } 

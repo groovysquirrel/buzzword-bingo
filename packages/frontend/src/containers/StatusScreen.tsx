@@ -3,13 +3,12 @@ import { Container, Row, Col, Card } from 'react-bootstrap';
 
 // Import our types, hooks, and components for consistency
 import { LeaderboardTable } from '../components/Leaderboard';
-import { GameController } from '../components/GameController';
+import { GameController } from '../components/GameController/GameController';
 import { LiveActivityFeed } from '../components/LiveActivityFeed';
 import { useWebSocketLeaderboard } from '../hooks/useWebSocketLeaderboard';
-
+import { useAppContext } from '../lib/contextLib';
 
 import './StatusScreen.css';
-
 
 /**
  * Corporate Assessment Platform Status Dashboard
@@ -17,29 +16,44 @@ import './StatusScreen.css';
  * A professional monitoring system designed for executive conference displays.
  * Real-time performance tracking and employee engagement analytics via enterprise WebSocket infrastructure.
  * 
- * Optimized for serverless deployment with advanced corporate monitoring capabilities.
+ * Now uses WebSocket-based game status updates instead of API polling for better real-time performance.
  */
 export default function StatusScreen() {
-  const [gameId, setGameId] = useState<string | null>(null);
-  const [gameStatus, setGameStatus] = useState<string>("standby");
+  const { isAuthenticated } = useAppContext();
+  
+  // Track game state changes from admin controls
+  const [adminGameId, setAdminGameId] = useState<string | null>(null);
+  const [adminGameStatus, setAdminGameStatus] = useState<string | null>(null);
 
-  // Use WebSocket for real-time enterprise analytics
+  // Use WebSocket for real-time enterprise analytics with fallback to a default game
+  const fallbackGameId = adminGameId || "game-001"; // Use admin game or fallback
+  
   const { 
     leaderboard, 
     events,
-    loading,
-    error,
+    loading: leaderboardLoading,
+    error: leaderboardError,
     isConnected,
-    
-  } = useWebSocketLeaderboard(gameId);
+    gameStatus: webSocketGameStatus
+  } = useWebSocketLeaderboard(fallbackGameId);
+
+  // Use admin-controlled game status if available, otherwise use WebSocket status
+  const effectiveGameStatus = adminGameStatus || webSocketGameStatus || "unknown";
 
   /**
-   * Handle game state changes from GameController
+   * Handle game state changes from GameController (admin only)
    */
   const handleGameStateChange = (newGameId: string | null, newStatus: string) => {
-    setGameId(newGameId);
-    setGameStatus(newStatus);
+    setAdminGameId(newGameId);
+    setAdminGameStatus(newStatus);
+    console.log("Status Screen: Game state changed via admin control:", newGameId, newStatus);
   };
+
+  // Determine overall loading state
+  const loading = leaderboardLoading;
+
+  // Use WebSocket error
+  const error = leaderboardError;
 
   // Show loading screen while enterprise data loads
   if (loading) {
@@ -66,6 +80,7 @@ export default function StatusScreen() {
               <p className="status-screen-header__subtitle">
                 Real-time Professional Development Analytics Dashboard
               </p>
+
             </Col>
           </Row>
         </Container>
@@ -96,11 +111,16 @@ export default function StatusScreen() {
               
               <Card.Body className="dashboard-card__body">
                 <LeaderboardTable
-                  leaderboard={leaderboard || { gameId: '', timestamp: '', totalPlayers: 0, leaderboard: [] }}
+                  leaderboard={leaderboard || { 
+                    gameId: fallbackGameId || '', 
+                    timestamp: new Date().toISOString(), 
+                    totalPlayers: 0, 
+                    leaderboard: [] 
+                  }}
                   showDetails={true}
                   isConnected={isConnected}
-                  gameStatus={gameStatus}
-                  gameId={gameId}
+                  gameStatus={effectiveGameStatus}
+                  gameId={fallbackGameId}
                 />
               </Card.Body>
             </Card>
@@ -121,27 +141,17 @@ export default function StatusScreen() {
           </Col>
         </Row>
 
-        {/* Executive Control Panel */}
-        <Row className="mt-4">
-          <Col xs={12}>
-            <Card className="control-panel-card">
-              <Card.Header className="control-panel-card__header">
-                <div className="d-flex align-items-center justify-content-between">
-                  <div className="control-panel-card__title">
-                    <h5 className="mb-0">🎯 Executive Control Panel</h5>
-                    <small className="text-light opacity-75">Assessment Session Management</small>
-                  </div>
-                  <div className="control-panel-card__actions">
-                    <GameController 
-                      onGameStateChange={handleGameStateChange}
-                      className="game-controller-horizontal"
-                    />
-                  </div>
-                </div>
-              </Card.Header>
-            </Card>
-          </Col>
-        </Row>
+        {/* Executive Control Panel - Only visible to authenticated users */}
+        {isAuthenticated && (
+          <Row className="mt-4">
+            <Col xs={12}>
+              <GameController 
+                onGameStateChange={handleGameStateChange}
+                className="game-controller-horizontal"
+              />
+            </Col>
+          </Row>
+        )}
       </Container>
     </div>
   );

@@ -1,8 +1,10 @@
 import { Resource } from "sst";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { ScanCommand, BatchWriteCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { ScanCommand, BatchWriteCommand, PutCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { APIGatewayProxyEvent } from "aws-lambda";
 import { handler } from "../lib/handler";
+import { createDefaultGame } from "../lib/gameUtils";
+import { addEvent } from "../lib/gameEvents";
 
 const dynamoDb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
@@ -109,14 +111,69 @@ async function systemPurge(event: APIGatewayProxyEvent) {
 
   console.log(`🚨 SYSTEM PURGE COMPLETE - Deleted ${totalItemsDeleted} total items`);
 
-  return JSON.stringify({
-    success: true,
-    message: "System purge completed",
-    timestamp: new Date().toISOString(),
-    totalItemsDeleted,
-    tableResults: purgeResults,
-    warning: "ALL DATA HAS BEEN DELETED FROM ALL TABLES"
-  });
+  // Auto-initialize system with a new game in "started" state
+  console.log("🎮 Initializing system with new game...");
+  
+  try {
+    // Generate new game ID with timestamp
+    const timestamp = Date.now();
+    const newGameId = `game-${timestamp}`;
+
+    // Create new game in "started" state (ready for testing)
+    const newGameConfig = {
+      ...createDefaultGame(),
+      gameId: newGameId,
+      status: "started" as const, // Override default "active" status with "started"
+      updatedAt: new Date().toISOString(),
+      stateHistory: [{
+        from: "open",
+        to: "started",
+        timestamp: new Date().toISOString(),
+        reason: "System initialization after purge"
+      }]
+    };
+
+    await dynamoDb.send(new PutCommand({
+      TableName: Resource.Games.name,
+      Item: newGameConfig,
+    }));
+
+    // Publish initialization event
+    await addEvent("system_initialized", {
+      newGameId: newGameId,
+      status: "started",
+      message: "System initialized with new game after purge"
+    });
+
+    console.log(`✅ System initialized with game: ${newGameId} in "started" state`);
+
+    return JSON.stringify({
+      success: true,
+      message: "System purge completed and reinitialized",
+      timestamp: new Date().toISOString(),
+      totalItemsDeleted,
+      tableResults: purgeResults,
+      warning: "ALL DATA HAS BEEN DELETED FROM ALL TABLES",
+      initialization: {
+        newGameId: newGameId,
+        status: "started",
+        message: "System automatically initialized with new game"
+      }
+    });
+
+  } catch (initError) {
+    console.error("Failed to initialize system after purge:", initError);
+    
+    return JSON.stringify({
+      success: true,
+      message: "System purge completed but initialization failed",
+      timestamp: new Date().toISOString(),
+      totalItemsDeleted,
+      tableResults: purgeResults,
+      warning: "ALL DATA HAS BEEN DELETED FROM ALL TABLES",
+      initializationError: initError instanceof Error ? initError.message : "Unknown initialization error"
+    });
+  }
 }
 
 export const main = handler(systemPurge); 

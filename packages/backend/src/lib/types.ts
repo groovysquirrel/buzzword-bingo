@@ -1,3 +1,10 @@
+/**
+ * Core type definitions for the Buzzword Bingo backend
+ * 
+ * These interfaces define the structure of data stored in DynamoDB
+ * and used throughout the backend Lambda functions.
+ */
+
 // Player entity
 export interface Player {
   sessionId: string;
@@ -9,12 +16,14 @@ export interface Player {
 // Game entity
 export interface Game {
   gameId: string;
-  status: "active" | "scheduled" | "complete";
+  status: "open" | "started" | "paused" | "bingo" | "ended" | "cancelled" | "active" | "scheduled" | "complete"; // Extended to support new states
   wordList: string[];
   startTime: string;
   endTime?: string;
   nextGameId?: string;
   secretWords: string[]; // Pool of secret "beer words" for winners
+  updatedAt?: string; // When the game was last modified
+  stateHistory?: GameStateTransition[]; // History of state changes
 }
 
 // Bingo progress tracking
@@ -81,4 +90,12 @@ export interface Event {
   data: any;
   timestamp: string;
   expiresAt: number; // TTL field for auto-deletion
+}
+
+// Game state transition tracking
+export interface GameStateTransition {
+  from: string;
+  to: string;
+  timestamp: string;
+  reason?: string;
 } 

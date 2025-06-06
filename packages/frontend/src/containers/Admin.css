@@ -1,0 +1,249 @@
+/**
+ * Corporate Administration Dashboard Styles
+ * 
+ * Professional styling for executive management interface.
+ * Designed for serious business operations and enterprise-grade control.
+ */
+
+/* === ADMIN DASHBOARD CONTAINER === */
+.admin-dashboard-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+/* === ADMIN HEADER === */
+.admin-dashboard-header {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.admin-dashboard-header__logo {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.admin-dashboard-header__title {
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin-bottom: 0.5rem;
+}
+
+.admin-dashboard-header__subtitle {
+  color: #cbd5e1;
+  font-weight: 500;
+  margin-bottom: 0;
+}
+
+/* === ADMIN NAVIGATION TABS === */
+.admin-nav-container {
+  background: #1e293b;
+  border-radius: 12px 12px 0 0;
+  border-bottom: 1px solid #334155;
+}
+
+.admin-nav-pills .nav-link {
+  color: #cbd5e1 !important;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 6px;
+  margin-right: 0.5rem;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.admin-nav-pills .nav-link:hover {
+  background-color: #334155;
+  color: #f1f5f9 !important;
+}
+
+.admin-nav-pills .nav-link.active {
+  background-color: #0f172a !important;
+  color: #f59e0b !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* === ADMIN CONTENT AREAS === */
+.admin-content-section {
+  background: #ffffff;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.admin-section-title {
+  color: #1e293b;
+  font-weight: 700;
+  font-size: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+/* === QUICK OVERVIEW CARDS === */
+.admin-overview-card {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  height: 100%;
+}
+
+.admin-overview-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  border-color: #cbd5e1;
+}
+
+.admin-overview-card__icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.admin-overview-card__title {
+  color: #1e293b;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.admin-overview-card__description {
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* === ACTION BUTTONS === */
+.admin-action-btn {
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  border: 2px solid #334155;
+  color: #334155;
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.admin-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: #334155;
+  color: #ffffff;
+  border-color: #334155;
+}
+
+.admin-action-btn:active {
+  transform: translateY(0);
+}
+
+/* === GAME CONTROL SECTION === */
+.admin-game-control-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.admin-game-control-card .card-body {
+  padding: 2rem;
+}
+
+.admin-game-control-title {
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 1.125rem;
+  margin-bottom: 1.5rem;
+}
+
+/* === TESTING ENVIRONMENT === */
+.admin-testing-alert {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  color: #92400e;
+}
+
+.admin-testing-alert .alert-heading {
+  color: #92400e;
+  font-weight: 700;
+}
+
+/* === MONITORING SECTION === */
+.admin-monitoring-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.admin-monitoring-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #cbd5e1;
+}
+
+.admin-monitoring-card__title {
+  color: #1e293b;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.admin-status-indicator {
+  display: block;
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.admin-status-indicator:last-child {
+  margin-bottom: 0;
+}
+
+/* === RESPONSIVE DESIGN === */
+@media (max-width: 768px) {
+  .admin-nav-pills {
+    flex-direction: column;
+  }
+  
+  .admin-nav-pills .nav-link {
+    margin-right: 0;
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+  
+  .admin-overview-card {
+    margin-bottom: 1rem;
+  }
+  
+  .admin-action-btn {
+    margin-bottom: 1rem;
+  }
+}
+
+/* === DARK MODE SUPPORT === */
+@media (prefers-color-scheme: dark) {
+  .admin-dashboard-container {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  }
+  
+  .admin-content-section {
+    background: #1e293b;
+    color: #f1f5f9;
+  }
+  
+  .admin-overview-card {
+    background: linear-gradient(135deg, #334155 0%, #475569 100%);
+    border-color: #475569;
+    color: #f1f5f9;
+  }
+  
+  .admin-section-title,
+  .admin-overview-card__title {
+    color: #f1f5f9;
+  }
+  
+  .admin-overview-card__description {
+    color: #cbd5e1;
+  }
+}

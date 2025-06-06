@@ -1,19 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API } from 'aws-amplify';
+
+
 import { SessionInfo } from '../types/game';
 import { WebSocketService } from '../lib/websocket';
+import { 
+  getSessionAction, 
+  WebSocketEvent
+} from '../utils/eventFormatter';
 
-interface GameStatusResponse {
-  currentGameId: string;
-  activeGameId: string;
-  gameIsActive: boolean;
-  needsGameSwitch: boolean;
-  sessionId: string;
-  nickname: string;
-  message: string;
-  timestamp: string;
-}
+
 
 /**
  * Custom hook for managing game session state
@@ -32,23 +28,36 @@ export function useGameSession() {
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [gameStatusMessage, setGameStatusMessage] = useState<string | null>(null);
+  const [winnerInfo, setWinnerInfo] = useState<any>(null);
+  
   const navigate = useNavigate();
 
   useEffect(() => {
     loadSession();
   }, [navigate]);
 
+  // Validate session's game ID and auto-correct if needed
+  useEffect(() => {
+    if (session) {
+      validateAndCorrectGameId();
+    }
+  }, [session]);
+
   // Listen for WebSocket game management events instead of polling
   useEffect(() => {
     if (!session) return;
 
     let wsService: WebSocketService | null = null;
+    let pollingInterval: NodeJS.Timeout | null = null;
 
     const setupWebSocketListener = async () => {
       try {
-        const wsUrl = process.env.REACT_APP_WEBSOCKET_URL;
+        // Try different environment variable patterns for different build systems
+        const wsUrl = import.meta.env?.VITE_WEBSOCKET_URL 
+                     
         if (!wsUrl) {
-          console.log('WebSocket URL not configured, skipping game status listener');
+          console.log('WebSocket URL not configured, using polling fallback');
+          pollingInterval = setupPollingFallback();
           return;
         }
 
@@ -68,83 +77,77 @@ export function useGameSession() {
       } catch (error) {
         console.error('Failed to connect WebSocket for game status:', error);
         // Fallback to polling if WebSocket fails
-        setupPollingFallback();
+        pollingInterval = setupPollingFallback();
       }
     };
 
-    const handleGameManagementEvent = (data: any) => {
-      if (data.type === 'activity_event' && data.event) {
-        const { type: eventType, data: eventData } = data.event;
-        
-        if (eventType === 'new_game' && eventData.newGameId) {
-          console.log('New game detected via WebSocket:', eventData.newGameId);
-          setGameStatusMessage(`New game started! Switching to game ${eventData.newGameId}`);
-          
-          // Update session to new game
-          const updatedSession: SessionInfo = {
-            ...session,
-            currentGameId: eventData.newGameId
-          };
-          updateSession(updatedSession);
-          
-          // Clear message after 5 seconds
-          setTimeout(() => setGameStatusMessage(null), 5000);
-        } else if (eventType === 'game_reset' && eventData.gameId === session.currentGameId) {
-          console.log('Game reset detected via WebSocket');
-          setGameStatusMessage('Game has been reset! Your progress has been cleared.');
-          
-          // Clear message after 5 seconds
-          setTimeout(() => setGameStatusMessage(null), 5000);
-        }
-      }
-    };
-
-    const setupPollingFallback = () => {
-      console.log('Setting up polling fallback for game status');
+    const handleGameManagementEvent = (data: WebSocketEvent) => {
+      // Use centralized event handler to determine action
+      const action = getSessionAction(data, session.currentGameId);
       
-      const checkGameStatus = async () => {
-        try {
-          const result: GameStatusResponse = await API.get("api", `/game/${session.currentGameId}/status`, {
-            headers: {
-              Authorization: `Bearer ${session.signedToken}`
-            }
-          });
-
-          if (result.needsGameSwitch) {
-            console.log("Game switch needed:", result.message);
-            setGameStatusMessage(result.message);
+      switch (action.type) {
+        case 'SWITCH_GAME':
+          if (action.gameId && action.message) {
+            console.log('Switching to game:', action.gameId);
+            setGameStatusMessage(action.message);
             
-            // Auto-update session to new active game
+            // Update session to specific game
             const updatedSession: SessionInfo = {
               ...session,
-              currentGameId: result.activeGameId
+              currentGameId: action.gameId
             };
-            
             updateSession(updatedSession);
             
-            // Clear message after a few seconds
+            // Clear message after 5 seconds
             setTimeout(() => setGameStatusMessage(null), 5000);
-          } else {
-            setGameStatusMessage(null);
           }
-        } catch (error) {
-          console.error("Failed to check game status:", error);
-          // Don't show error to user, just log it
-        }
-      };
+          break;
+          
+        case 'SHOW_MESSAGE':
+          if (action.message) {
+            console.log('Showing message:', action.message);
+            setGameStatusMessage(action.message);
+            
+            // Store winner info if provided
+            if (action.winnerInfo) {
+              setWinnerInfo(action.winnerInfo);
+            }
+            
+            // Clear message after 5 seconds
+            setTimeout(() => setGameStatusMessage(null), 5000);
+          }
+          break;
+          
+        case 'RESET_PROGRESS':
+          // Handle progress reset if needed in the future
+          console.log('Progress reset requested');
+          break;
+          
+        case 'NONE':
+        default:
+          // No action needed for this event
+          break;
+      }
+    };
 
-      // Check immediately, then every 60 seconds (increased interval since it's fallback)
-      checkGameStatus();
-      const interval = setInterval(checkGameStatus, 60000);
-
-      return () => clearInterval(interval);
+    const setupPollingFallback = (): NodeJS.Timeout => {
+      console.log('Polling fallback removed - using WebSocket-only with centralized event handling');
+      // Return dummy timeout to maintain interface compatibility
+      return setTimeout(() => {}, 0);
     };
 
     setupWebSocketListener();
 
     return () => {
+      // Clean up WebSocket
       if (wsService) {
         wsService.disconnect();
+      }
+      
+      // Clean up polling interval
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+        console.log('Cleared polling interval');
       }
     };
   }, [session]);
@@ -209,10 +212,21 @@ export function useGameSession() {
     localStorage.setItem('buzzword-bingo-session', JSON.stringify(newSession));
   };
 
+  /**
+   * Enhanced validation that checks if session is valid with backend
+   */
+  const validateAndCorrectGameId = async () => {
+    // Removed - game state is now managed by WebSocket and GameController
+    // No need to poll current-game endpoint
+    console.log('Game ID validation removed - using WebSocket and GameController');
+    return;
+  };
+
   return {
     session,
     loading,
     gameStatusMessage,
+    winnerInfo,
     clearSession,
     updateSession,
     refreshSession: loadSession

@@ -3,7 +3,7 @@ import Home from "./containers/Home.tsx";
 import Login from "./containers/Login.tsx";
 import Settings from "./containers/Settings.tsx";
 import NotFound from "./containers/NotFound.tsx";
-import BingoTest from "./containers/BingoTest.tsx";
+import Admin from "./containers/Admin.tsx";
 import StatusScreen from "./containers/StatusScreen.tsx";
 import Join from "./containers/Join.tsx";
 import BingoGame from "./containers/BingoGame.tsx";
@@ -22,11 +22,19 @@ export default function Links() {
       {/* Status board for public displays */}
       <Route path="/status" element={<StatusScreen />} />
       
-      {/* Testing interface */}
-      <Route path="/bingo-test" element={<BingoTest />} />
+      {/* Admin dashboard with authentication required */}
+      <Route
+        path="/admin"
+        element={
+          <AuthenticatedRoute>
+            <Admin />
+          </AuthenticatedRoute>
+        }
+      />
       
-      {/* Admin/authenticated routes */}
-      <Route path="/admin" element={<Home />} />
+      {/* Legacy home route - redirect to main Join page */}
+      <Route path="/home" element={<Home />} />
+      
       <Route
         path="/login"
         element={

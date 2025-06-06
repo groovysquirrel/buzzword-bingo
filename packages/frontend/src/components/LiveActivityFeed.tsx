@@ -2,19 +2,13 @@ import React from 'react';
 import { ListGroup } from 'react-bootstrap';
 import { GameEvent } from '../types/game';
 import { 
+  ActivityEvent,
   normalizeEvent, 
   formatEventMessage, 
   getEventIcon, 
   getEventColor, 
   formatTime 
 } from '../utils/eventFormatter';
-
-interface ActivityEvent {
-  id: string;
-  type: string;
-  data: any;
-  timestamp: string;
-}
 
 type UnifiedEvent = GameEvent | ActivityEvent;
 
@@ -33,7 +27,21 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
   events,
   className = "activity-feed"
 }) => {
-  if (events.length === 0) {
+  // Deduplicate events based on ID and timestamp
+  const deduplicatedEvents = React.useMemo(() => {
+    const seen = new Set<string>();
+    return events.filter((event) => {
+      const normalized = normalizeEvent(event);
+      const key = `${normalized.id}-${normalized.timestamp}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  }, [events]);
+
+  if (deduplicatedEvents.length === 0) {
     return (
       <div className="activity-empty">
         <span className="activity-empty__icon">📋</span>
@@ -46,11 +54,11 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
   return (
     <div className={className}>
       <ListGroup variant="flush">
-        {events.map((event, index) => {
+        {deduplicatedEvents.map((event, index) => {
           const normalized = normalizeEvent(event);
           return (
             <ListGroup.Item 
-              key={normalized.id}
+              key={`${normalized.id}-${normalized.timestamp}`}
               className={`activity-item ${index % 2 === 0 ? 'activity-item--even' : ''}`}
             >
               <div className="d-flex align-items-start gap-3">

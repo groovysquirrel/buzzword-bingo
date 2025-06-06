@@ -124,14 +124,14 @@ export async function main(event: APIGatewayProxyWebsocketEventV2WithRequestCont
         lastActiveAt: new Date().toISOString(),
       };
 
-      console.log(`[WS Connect] Public connection: ${deviceId} -> ${connectionId}`);
+      //console.log(`[WS Connect] Public connection: ${deviceId} -> ${connectionId}`);
 
     } else {
       console.error('[WS Connect] Unknown connection type:', connectionType);
       return { statusCode: 401, body: "Unauthorized - Unknown connection type" };
     }
 
-    console.log('[WS Connect] Storing connection data:', connectionData);
+    //console.log('[WS Connect] Storing connection data:', connectionData);
 
     // Store connection in the Events table with a special type for WebSocket connections
     const now = new Date();

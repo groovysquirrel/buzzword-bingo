@@ -13,11 +13,13 @@ interface ExtendedLeaderboardProps extends LeaderboardProps {
  */
 const getStatusDisplayText = (status: string): string => {
   switch (status) {
-    case "standby": return "STANDBY";
-    case "active": return "ACTIVE SESSION";
-    case "evaluating": return "EVALUATION PENDING";
-    case "completed": return "SESSION COMPLETED";
-    default: return "STANDBY";
+    case "open": return "OPEN";
+    case "started": return "ACTIVE";
+    case "paused": return "PAUSED";
+    case "bingo": return "BINGO PENDING";
+    case "ended": return "GAME COMPLETE";
+    case "cancelled": return "CANCELLED";
+    default: return "---";
   }
 };
 

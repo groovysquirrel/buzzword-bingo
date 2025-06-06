@@ -123,12 +123,15 @@ export async function getCurrentActiveGameId(): Promise<string> {
     // Get all active games
     const result = await dynamoDb.send(new ScanCommand({
       TableName: Resource.Games.name,
-      FilterExpression: "#status = :status",
+      FilterExpression: "#status IN (:started, :open, :paused, :bingo)",
       ExpressionAttributeNames: {
         "#status": "status",
       },
       ExpressionAttributeValues: {
-        ":status": "active",
+        ":started": "started",
+        ":open": "open", 
+        ":paused": "paused",
+        ":bingo": "bingo"
       },
     }));
 
@@ -157,19 +160,28 @@ export async function getCurrentActiveGameId(): Promise<string> {
  */
 export function createDefaultGame(): {
   gameId: string;
-  status: "active";
+  status: "open";
   wordList: string[];
   startTime: string;
   secretWords: string[];
+  updatedAt: string;
+  stateHistory: Array<{from: string; to: string; timestamp: string; reason?: string}>;
 } {
   return {
     gameId: getCurrentGameId(), // Use sync version for now
-    status: "active",
+    status: "open", // Start games in "open" state by default
     wordList: MASTER_BUZZWORDS,
     startTime: new Date().toISOString(),
     secretWords: [
       "Agile Pipeline", "Digital Synergy", "Cloud Innovation", "AI Transformation",
       "Disruptive Framework", "Scalable Solution", "Strategic Paradigm", "Smart Ecosystem"
-    ]
+    ],
+    updatedAt: new Date().toISOString(),
+    stateHistory: [{
+      from: "created",
+      to: "open",
+      timestamp: new Date().toISOString(),
+      reason: "Game created"
+    }]
   };
 } 

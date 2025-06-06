@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent } from "aws-lambda";
-import { handler } from "./lib/handler";
-import { createPublicToken, generateDeviceId } from "./lib/token";
+import { handler } from "../lib/handler";
+import { createPublicToken, generateDeviceId } from "./token";
 
 /**
  * Generate a public access token for status boards

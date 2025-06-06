@@ -6,6 +6,7 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Card from "react-bootstrap/Card";
 import Button from "react-bootstrap/Button";
+import Alert from "react-bootstrap/Alert";
 import "./Home.css";
 
 export default function Home() {
@@ -61,11 +62,18 @@ export default function Home() {
                 >
                   Conference engagement tool with real-time leaderboards
                 </p>
+
+                {/* Legacy Route Notice */}
+                <Alert variant="info" className="mb-4">
+                  <small>
+                    <strong>Quick Links:</strong> Use the buttons below to access the main areas of the application.
+                  </small>
+                </Alert>
                 
                 {/* Action Buttons */}
                 <Row className="g-3 justify-content-center">
                   <Col xs={12} sm={6} md={5}>
-                    <LinkContainer to="/bingo-test">
+                    <LinkContainer to="/">
                       <Button 
                         size="lg" 
                         className="w-100 fw-bold shadow-sm"
@@ -75,12 +83,12 @@ export default function Home() {
                           color: "white"
                         }}
                       >
-                        🎮 Test Game
+                        🎯 Play Game
                       </Button>
                     </LinkContainer>
                   </Col>
                   <Col xs={12} sm={6} md={5}>
-                    <LinkContainer to="/status">
+                    <LinkContainer to="/admin">
                       <Button 
                         variant="outline-dark"
                         size="lg" 
@@ -90,7 +98,33 @@ export default function Home() {
                           color: "#1F2937"
                         }}
                       >
+                        ⚙️ Admin Dashboard
+                      </Button>
+                    </LinkContainer>
+                  </Col>
+                </Row>
+                
+                {/* Additional Links */}
+                <Row className="mt-3 g-2 justify-content-center">
+                  <Col xs={12} sm={4}>
+                    <LinkContainer to="/status">
+                      <Button 
+                        variant="outline-secondary"
+                        size="sm" 
+                        className="w-100"
+                      >
                         📊 Status Board
+                      </Button>
+                    </LinkContainer>
+                  </Col>
+                  <Col xs={12} sm={4}>
+                    <LinkContainer to="/leaderboard">
+                      <Button 
+                        variant="outline-secondary"
+                        size="sm" 
+                        className="w-100"
+                      >
+                        🏆 Leaderboard
                       </Button>
                     </LinkContainer>
                   </Col>
@@ -101,20 +135,20 @@ export default function Home() {
                   <Col xs={12} md={6}>
                     <div className="p-3 rounded" style={{ backgroundColor: "#FEF3C7" }}>
                       <h6 className="fw-bold mb-2" style={{ color: "#1F2937" }}>
-                        🎮 Test Interface
+                        🎯 Player Experience
                       </h6>
                       <small style={{ color: "#374151" }}>
-                        Join as multiple players and test the game mechanics
+                        Join the game and mark buzzwords in real-time
                       </small>
                     </div>
                   </Col>
                   <Col xs={12} md={6}>
                     <div className="p-3 rounded" style={{ backgroundColor: "#FEF3C7" }}>
                       <h6 className="fw-bold mb-2" style={{ color: "#1F2937" }}>
-                        📊 Status Board
+                        ⚙️ Admin Dashboard
                       </h6>
                       <small style={{ color: "#374151" }}>
-                        Real-time leaderboard and activity feed for public display
+                        Manage games, test functionality, and monitor activity
                       </small>
                     </div>
                   </Col>

@@ -5,5 +5,5 @@
  * throughout the application.
  */
 
-export { BingoGrid } from './BingoGrid';
+export { BingoGrid, checkForBingo } from './BingoGrid';
 export { BingoCell } from './BingoCell'; 

@@ -385,7 +385,7 @@ export default function BingoTest() {
   const testAPI = async () => {
     setLoading(true);
     try {
-      const result = await API.get("api", "/test", {});
+      const result = await API.get("api", "/admin/test", {});
       setTestResults(result);
     } catch (error) {
       console.error("Test API error:", error);

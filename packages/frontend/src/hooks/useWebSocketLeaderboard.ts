@@ -10,6 +10,8 @@ interface UseWebSocketLeaderboardResult {
   isConnected: boolean;
   lastUpdate: string | null;
   clearError: () => void;
+  gameStatus: string | null;
+  winnerInfo: any | null;
 }
 
 /**
@@ -72,6 +74,8 @@ export function useWebSocketLeaderboard(input: SessionInfo | string | null): Use
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
+  const [gameStatus, setGameStatus] = useState<string | null>(null);
+  const [winnerInfo, setWinnerInfo] = useState<any | null>(null);
   
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -84,10 +88,12 @@ export function useWebSocketLeaderboard(input: SessionInfo | string | null): Use
 
   useEffect(() => {
     if (!gameId) {
+      console.log('🔍 useWebSocketLeaderboard: No gameId provided, stopping');
       setLoading(false);
       return;
     }
 
+    console.log(`🎮 useWebSocketLeaderboard: Starting for gameId: ${gameId}`);
     connectWebSocket();
 
     return () => {
@@ -237,11 +243,15 @@ export function useWebSocketLeaderboard(input: SessionInfo | string | null): Use
    * Handle incoming WebSocket messages
    */
   const handleWebSocketMessage = (data: any) => {
-    console.log('WebSocket message:', data);
+    console.log(`📨 WebSocket message received:`, data);
     setLastUpdate(new Date().toISOString());
 
     switch (data.type) {
       case 'leaderboard_update':
+        console.log(`📊 Leaderboard update for game ${data.gameId}:`, {
+          totalPlayers: data.leaderboard?.length || 0,
+          players: data.leaderboard?.map((p: any) => ({ nickname: p.nickname, sessionId: p.sessionId, points: p.points })) || []
+        });
         if (data.leaderboard) {
           setLeaderboard({
             gameId: data.gameId,
@@ -254,24 +264,31 @@ export function useWebSocketLeaderboard(input: SessionInfo | string | null): Use
         break;
 
       case 'activity_event':
+        console.log(`🎭 Activity event:`, data.event);
         if (data.event) {
           setEvents(prev => [data.event, ...prev.slice(0, 49)]); // Keep last 50 events
         }
         break;
 
+      case 'game_state_changed':
+        console.log(`🎮 Game state changed from ${data.previousState} to ${data.newState}`);
+        setGameStatus(data.newState);
+        setWinnerInfo(data.winnerInfo);
+        break;
+
       case 'subscribed':
-        console.log('Successfully subscribed to game updates');
+        console.log(`✅ Successfully subscribed to game updates for: ${gameId}`);
         setLoading(false);
         break;
 
       case 'error':
-        console.error('WebSocket error message:', data.message);
+        console.error('❌ WebSocket error message:', data.message);
         setError(data.message);
         setLoading(false);
         break;
 
       default:
-        console.log('Unknown WebSocket message type:', data.type);
+        console.log('❓ Unknown WebSocket message type:', data.type);
     }
   };
 
@@ -289,6 +306,8 @@ export function useWebSocketLeaderboard(input: SessionInfo | string | null): Use
     error,
     isConnected,
     lastUpdate,
-    clearError
+    clearError,
+    gameStatus,
+    winnerInfo
   };
 } 
