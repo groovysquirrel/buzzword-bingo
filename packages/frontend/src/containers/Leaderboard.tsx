@@ -23,8 +23,8 @@ export default function Leaderboard() {
   const { session, loading: sessionLoading, gameStatusMessage } = useGameSession();
   const { bingoCard, loading: gameLoading } = useBingoGame(session);
   
-  // Use session game ID if available, otherwise use fallback
-  const effectiveGameId = session?.currentGameId || "error";
+  // Use session game ID if available, otherwise don't initialize WebSocket until session loads
+  const effectiveGameId = session?.currentGameId || null;
   
   const {
     leaderboard,

@@ -12,7 +12,7 @@ const dynamoDb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
  * Cleans up connection information
  */
 export async function main(event: APIGatewayProxyEvent) {
-  console.log("WebSocket disconnect event:", JSON.stringify(event, null, 2));
+  //console.log("WebSocket disconnect event:", JSON.stringify(event, null, 2));
 
   const { connectionId } = event.requestContext;
   

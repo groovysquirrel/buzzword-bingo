@@ -82,9 +82,6 @@ const GAME_STATES = {
  * State transition buttons and their styling
  */
 const STATE_ACTIONS = {
-  open: {
-    startHost: { label: 'Start Host', icon: '▶️', class: 'primary', newState: 'started', broadcast: false }
-  },
   started: {
     pause: { label: 'Pause Game', icon: '⏸️', class: 'warning', newState: 'paused' },
     end: { label: 'End Game', icon: '🏁', class: 'primary', newState: 'ended' }
@@ -402,46 +399,59 @@ export const GameController: React.FC<GameControllerProps> = ({
   };
 
   /**
-   * Create a new game without confirmation (helper function)
+   * Create a new game and automatically start it
    */
-  const createNewGameInternal = async () => {
+  const createNewGame = async () => {
     setIsLoading(true);
-        setError(null);
+    setError(null);
 
-    // Use edited game ID if available, otherwise use current game ID
+    // Use edited game ID if available, otherwise use current game ID  
     const targetGameId = editedGameId.trim() 
       ? editedGameId.trim()
       : gameId || 'new';
 
-        try {
+    try {
+      // Step 1: Create the new game
       const result = await API.post("api", `/admin/games/${targetGameId}/new`, {});
           
-          if (result.success && result.newGameId) {
-            updateGameState(result.newGameId, 'open');
-            await fetchGameDetails(result.newGameId);
+      if (result.success && result.newGameId) {
+        console.log("New game created:", result.newGameId);
+        
+        // Step 2: Automatically start the host game
+        const startResult = await API.post("api", `/admin/games/${result.newGameId}/state`, {
+          body: {
+            newState: 'started',
+            reason: 'Host game started automatically after creation',
+            broadcast: false // Don't broadcast start to avoid confusing players
+          }
+        });
+
+        if (startResult.success) {
+          // Update state to 'started' immediately
+          updateGameState(result.newGameId, 'started');
+          await fetchGameDetails(result.newGameId);
+          
+          console.log("New game created and started:", result.newGameId);
+        } else {
+          // If start failed, fall back to just creating the game
+          updateGameState(result.newGameId, 'open');
+          await fetchGameDetails(result.newGameId);
+          setError("Game created but failed to start automatically");
+        }
         
         // Clear editing state after successful creation
         setIsEditingGameId(false);
         setEditedGameId("");
         
-            console.log("New game created:", result.newGameId);
-          } else {
-            setError(result.error || "Failed to create new game");
-          }
+      } else {
+        setError(result.error || "Failed to create new game");
+      }
     } catch (error) {
-          console.error("Failed to create new game:", error);
-          setError(error instanceof Error ? error.message : "Unknown error");
+      console.error("Failed to create and start new game:", error);
+      setError(error instanceof Error ? error.message : "Unknown error");
     } finally {
       setIsLoading(false);
     }
-  };
-
-  /**
-   * Create a new game
-   */
-  const createNewGame = async () => {
-    // Create the game immediately without confirmation
-    await createNewGameInternal();
   };
 
   /**
@@ -548,16 +558,17 @@ export const GameController: React.FC<GameControllerProps> = ({
       const actions = STATE_ACTIONS[gameStatus as keyof typeof STATE_ACTIONS];
       if (actions) {
         Object.entries(actions).forEach(([actionKey, action]) => {
-          // Handle special actions
-          if (action.newState === 'new') return; // Skip "new" action as we handle it separately
-          
           buttons.push(
             <Button
               key={actionKey}
               onClick={() => {
-                const broadcast = 'broadcast' in action ? Boolean(action.broadcast) : true;
-                const actionParam = 'action' in action ? action.action as string : undefined;
-                changeGameState(action.newState, undefined, broadcast, actionParam);
+                if (action.newState === 'new') {
+                  createNewGame();
+                } else {
+                  const broadcast = 'broadcast' in action ? Boolean(action.broadcast) : true;
+                  const actionParam = 'action' in action ? action.action as string : undefined;
+                  changeGameState(action.newState, undefined, broadcast, actionParam);
+                }
               }}
               disabled={isLoading}
               variant={action.class === 'success' ? 'success' : 
@@ -573,23 +584,6 @@ export const GameController: React.FC<GameControllerProps> = ({
           );
         });
       }
-    }
-
-    // Always show New Game button if current game is ended or cancelled
-    if (gameStatus === 'ended' || gameStatus === 'cancelled') {
-      buttons.push(
-        <Button
-          key="new-game"
-          onClick={createNewGame}
-          disabled={isLoading}
-          variant="primary"
-          size="sm"
-          className="compact-action-btn"
-          title="Create new game"
-        >
-          🎲 New Game
-        </Button>
-      );
     }
 
     return buttons;

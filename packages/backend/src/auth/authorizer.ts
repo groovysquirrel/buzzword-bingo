@@ -66,7 +66,7 @@ interface AuthResponse {
  * Format: wss://ws.buzzwordbingo.live?token=<session_token_or_public_token>
  */
 export async function main(event: CustomWebsocketEvent): Promise<AuthResponse> {
-  console.log('[WS Authorizer] Handler called with event:', JSON.stringify(event, null, 2));
+  //console.log('[WS Authorizer] Handler called with event:', JSON.stringify(event, null, 2));
 
   try {
     // Extract token from query parameters
@@ -77,7 +77,7 @@ export async function main(event: CustomWebsocketEvent): Promise<AuthResponse> {
       return generateDeny('anonymous', event.methodArn);
     }
 
-    console.log('[WS Authorizer] Token found, verifying...');
+    //console.log('[WS Authorizer] Token found, verifying...');
 
     // Verify the token (either session or public)
     const tokenResult = verifyAnyToken(token);
@@ -87,7 +87,7 @@ export async function main(event: CustomWebsocketEvent): Promise<AuthResponse> {
       return generateDeny('invalid', event.methodArn);
     }
 
-    console.log(`[WS Authorizer] Token verified - Type: ${tokenResult.type}`);
+    //console.log(`[WS Authorizer] Token verified - Type: ${tokenResult.type}`);
     
     // Generate and return the allow policy based on token type
     let response: AuthResponse;
@@ -107,7 +107,7 @@ export async function main(event: CustomWebsocketEvent): Promise<AuthResponse> {
     } else {
       // Public access token
       const publicData = tokenResult.data;
-      console.log(`[WS Authorizer] Public access verified: ${publicData.deviceId}`);
+      //console.log(`[WS Authorizer] Public access verified: ${publicData.deviceId}`);
       
       response = generateAllow(publicData.deviceId, event.methodArn, {
         userId: publicData.deviceId,
@@ -118,11 +118,11 @@ export async function main(event: CustomWebsocketEvent): Promise<AuthResponse> {
       });
     }
     
-    console.log('[WS Authorizer] Returning allow policy for connection type:', tokenResult.type);
+    //console.log('[WS Authorizer] Returning allow policy for connection type:', tokenResult.type);
     return response;
 
   } catch (error) {
-    console.error('[WS Authorizer] Authorization failed:', error);
+    //console.error('[WS Authorizer] Authorization failed:', error);
     return generateDeny('error', event.methodArn);
   }
 }

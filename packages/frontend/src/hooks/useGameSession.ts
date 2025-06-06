@@ -1,15 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-
 import { SessionInfo } from '../types/game';
-import { WebSocketService } from '../lib/websocket';
-import { 
-  getSessionAction, 
-  WebSocketEvent
-} from '../utils/eventFormatter';
-
-
 
 /**
  * Custom hook for managing game session state
@@ -27,8 +18,8 @@ import {
 export function useGameSession() {
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [gameStatusMessage, setGameStatusMessage] = useState<string | null>(null);
-  const [winnerInfo, setWinnerInfo] = useState<any>(null);
+  const [gameStatusMessage, _setGameStatusMessage] = useState<string | null>(null);
+  const [winnerInfo, _setWinnerInfo] = useState<any>(null);
   
   const navigate = useNavigate();
 
@@ -47,108 +38,12 @@ export function useGameSession() {
   useEffect(() => {
     if (!session) return;
 
-    let wsService: WebSocketService | null = null;
-    let pollingInterval: NodeJS.Timeout | null = null;
-
-    const setupWebSocketListener = async () => {
-      try {
-        // Try different environment variable patterns for different build systems
-        const wsUrl = import.meta.env?.VITE_WEBSOCKET_URL 
-                     
-        if (!wsUrl) {
-          console.log('WebSocket URL not configured, using polling fallback');
-          pollingInterval = setupPollingFallback();
-          return;
-        }
-
-        wsService = new WebSocketService({
-          url: wsUrl,
-          token: session.signedToken,
-          maxReconnectAttempts: 3,
-          reconnectDelay: 5000
-        });
-
-        wsService.on('message', (data: any) => {
-          handleGameManagementEvent(data);
-        });
-
-        await wsService.connect();
-        console.log('WebSocket connected for game status monitoring');
-      } catch (error) {
-        console.error('Failed to connect WebSocket for game status:', error);
-        // Fallback to polling if WebSocket fails
-        pollingInterval = setupPollingFallback();
-      }
-    };
-
-    const handleGameManagementEvent = (data: WebSocketEvent) => {
-      // Use centralized event handler to determine action
-      const action = getSessionAction(data, session.currentGameId);
-      
-      switch (action.type) {
-        case 'SWITCH_GAME':
-          if (action.gameId && action.message) {
-            console.log('Switching to game:', action.gameId);
-            setGameStatusMessage(action.message);
-            
-            // Update session to specific game
-            const updatedSession: SessionInfo = {
-              ...session,
-              currentGameId: action.gameId
-            };
-            updateSession(updatedSession);
-            
-            // Clear message after 5 seconds
-            setTimeout(() => setGameStatusMessage(null), 5000);
-          }
-          break;
-          
-        case 'SHOW_MESSAGE':
-          if (action.message) {
-            console.log('Showing message:', action.message);
-            setGameStatusMessage(action.message);
-            
-            // Store winner info if provided
-            if (action.winnerInfo) {
-              setWinnerInfo(action.winnerInfo);
-            }
-            
-            // Clear message after 5 seconds
-            setTimeout(() => setGameStatusMessage(null), 5000);
-          }
-          break;
-          
-        case 'RESET_PROGRESS':
-          // Handle progress reset if needed in the future
-          console.log('Progress reset requested');
-          break;
-          
-        case 'NONE':
-        default:
-          // No action needed for this event
-          break;
-      }
-    };
-
-    const setupPollingFallback = (): NodeJS.Timeout => {
-      console.log('Polling fallback removed - using WebSocket-only with centralized event handling');
-      // Return dummy timeout to maintain interface compatibility
-      return setTimeout(() => {}, 0);
-    };
-
-    setupWebSocketListener();
-
+    // Disable WebSocket connection in useGameSession to prevent conflicts with useWebSocketLeaderboard
+    // Game state changes are now handled by the main WebSocket connection in useWebSocketLeaderboard
+    console.log('🔧 useGameSession: WebSocket disabled to prevent conflicts with useWebSocketLeaderboard');
+    
     return () => {
-      // Clean up WebSocket
-      if (wsService) {
-        wsService.disconnect();
-      }
-      
-      // Clean up polling interval
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-        console.log('Cleared polling interval');
-      }
+      // No cleanup needed since no connections are made
     };
   }, [session]);
 

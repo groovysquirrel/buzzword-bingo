@@ -46,7 +46,7 @@ interface CustomRequestContext {
  * Handles both user sessions and public status board connections
  */
 export async function main(event: APIGatewayProxyWebsocketEventV2WithRequestContext<CustomRequestContext>) {
-  console.log('[WS Connect] Handler called with event:', JSON.stringify(event, null, 2));
+  //console.log('[WS Connect] Handler called with event:', JSON.stringify(event, null, 2));
 
   const { connectionId, domainName, stage } = event.requestContext;
   
@@ -64,7 +64,7 @@ export async function main(event: APIGatewayProxyWebsocketEventV2WithRequestCont
     const deviceId = event.requestContext.authorizer?.deviceId;
     const permissions = event.requestContext.authorizer?.permissions;
     
-    console.log('[WS Connect] Authorizer context:', {
+/*     console.log('[WS Connect] Authorizer context:', {
       connectionType,
       userId,
       sessionId,
@@ -72,7 +72,7 @@ export async function main(event: APIGatewayProxyWebsocketEventV2WithRequestCont
       deviceId,
       permissions,
       authorizer: event.requestContext.authorizer
-    });
+    }); */
     
     if (!connectionType || !userId) {
       console.error('[WS Connect] Missing required connection info from authorizer');
@@ -102,7 +102,7 @@ export async function main(event: APIGatewayProxyWebsocketEventV2WithRequestCont
         lastActiveAt: new Date().toISOString(),
       };
 
-      console.log(`[WS Connect] User connection: ${nickname} (${sessionId}) -> ${connectionId}`);
+      //console.log(`[WS Connect] User connection: ${nickname} (${sessionId}) -> ${connectionId}`);
 
     } else if (connectionType === "public") {
       // Public status board connection
@@ -146,7 +146,7 @@ export async function main(event: APIGatewayProxyWebsocketEventV2WithRequestCont
       },
     }));
 
-    console.log(`[WS Connect] Successfully connected: ${connectionType} connection -> ${connectionId}`);
+    //console.log(`[WS Connect] Successfully connected: ${connectionType} connection -> ${connectionId}`);
 
     return { 
       statusCode: 200, 

@@ -15,7 +15,7 @@ const webSocketManager = WebSocketManager.getInstance();
  * Handles incoming WebSocket messages and broadcasts updates
  */
 export async function main(event: APIGatewayProxyEvent) {
-  console.log("WebSocket message event:", JSON.stringify(event, null, 2));
+  //console.log("WebSocket message event:", JSON.stringify(event, null, 2));
 
   const { connectionId } = event.requestContext;
   
