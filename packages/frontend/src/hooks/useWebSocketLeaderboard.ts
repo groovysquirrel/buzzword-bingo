@@ -21,6 +21,21 @@ const PUBLIC_TOKEN_KEY = 'buzzword-bingo-public-token';
 const DEVICE_ID_KEY = 'buzzword-bingo-device-id';
 
 /**
+ * WebSocket Connection Pool
+ * Prevents duplicate connections for the same gameId/token combination
+ */
+interface PooledConnection {
+  ws: WebSocket;
+  gameId: string;
+  connectionKey: string;
+  subscribers: Set<string>;
+  reconnectAttempts: number;
+}
+
+const connectionPool = new Map<string, PooledConnection>();
+const subscriberCallbacks = new Map<string, (data: any) => void>();
+
+/**
  * Generate or retrieve public access token for status boards
  */
 async function getPublicToken(): Promise<string | null> {
@@ -60,12 +75,101 @@ async function getPublicToken(): Promise<string | null> {
 }
 
 /**
- * WebSocket-based Leaderboard Hook
+ * Get or create a pooled WebSocket connection
+ */
+async function getPooledConnection(gameId: string, token: string, connectionType: string): Promise<PooledConnection | null> {
+  const connectionKey = `${gameId}-${token.substring(0, 8)}`;
+  
+  // Return existing connection if available
+  if (connectionPool.has(connectionKey)) {
+    const connection = connectionPool.get(connectionKey)!;
+    if (connection.ws.readyState === WebSocket.OPEN) {
+      console.log(`♻️ Reusing existing WebSocket connection for ${gameId} (${connectionType})`);
+      return connection;
+    } else {
+      // Clean up dead connection
+      connectionPool.delete(connectionKey);
+    }
+  }
+
+  // Create new connection
+  console.log(`🔌 Creating new pooled WebSocket connection for ${gameId} (${connectionType})`);
+  
+  const wsUrl = process.env.NODE_ENV === 'development' 
+    ? 'wss://ws-dev.buzzwordbingo.live'
+    : 'wss://ws.buzzwordbingo.live';
+  
+  const url = `${wsUrl}?token=${encodeURIComponent(token)}`;
+  const ws = new WebSocket(url);
+  
+  const connection: PooledConnection = {
+    ws,
+    gameId,
+    connectionKey,
+    subscribers: new Set(),
+    reconnectAttempts: 0
+  };
+
+  return new Promise((resolve, reject) => {
+    ws.onopen = () => {
+      console.log(`✅ Pooled WebSocket connected for ${gameId} (${connectionType})`);
+      
+      // Subscribe to game updates
+      ws.send(JSON.stringify({
+        action: 'subscribe',
+        gameId: gameId
+      }));
+      
+      // Store in pool
+      connectionPool.set(connectionKey, connection);
+      resolve(connection);
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        // Broadcast to all subscribers of this connection
+        connection.subscribers.forEach(subscriberId => {
+          const callback = subscriberCallbacks.get(subscriberId);
+          if (callback) {
+            callback(data);
+          }
+        });
+      } catch (error) {
+        console.error('Failed to parse WebSocket message:', error);
+      }
+    };
+
+    ws.onclose = (event) => {
+      console.log(`❌ Pooled WebSocket disconnected for ${gameId}:`, { 
+        code: event.code, 
+        reason: event.reason 
+      });
+      
+      // Remove from pool
+      connectionPool.delete(connectionKey);
+      
+      // Notify all subscribers of disconnection
+      connection.subscribers.forEach(subscriberId => {
+        const callback = subscriberCallbacks.get(subscriberId);
+        if (callback) {
+          callback({ type: 'connection_lost' });
+        }
+      });
+    };
+
+    ws.onerror = (error) => {
+      console.error(`❌ Pooled WebSocket error for ${gameId}:`, error);
+      reject(error);
+    };
+  });
+}
+
+/**
+ * WebSocket-based Leaderboard Hook with Connection Pooling
  * 
- * Provides real-time leaderboard updates via WebSocket instead of SSE polling
- * More efficient for serverless functions - persistent connection vs repeated invocations
- * 
- * Supports both authenticated user sessions and public status board access
+ * Now uses a connection pool to prevent duplicate WebSocket connections
+ * for the same game/token combination, dramatically reducing connection count.
  */
 export function useWebSocketLeaderboard(input: SessionInfo | string | null): UseWebSocketLeaderboardResult {
   const [leaderboard, setLeaderboard] = useState<LeaderboardResponse | null>(null);
@@ -77,10 +181,8 @@ export function useWebSocketLeaderboard(input: SessionInfo | string | null): Use
   const [gameStatus, setGameStatus] = useState<string | null>(null);
   const [winnerInfo, setWinnerInfo] = useState<any | null>(null);
   
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectAttempts = useRef(0);
-  const maxReconnectAttempts = 5;
+  const subscriberIdRef = useRef<string>(Math.random().toString(36).substr(2, 9));
+  const connectionRef = useRef<PooledConnection | null>(null);
 
   // Extract gameId and token from input
   const gameId = typeof input === 'string' ? input : input?.currentGameId;
@@ -93,41 +195,31 @@ export function useWebSocketLeaderboard(input: SessionInfo | string | null): Use
       return;
     }
 
-    console.log(`🎮 useWebSocketLeaderboard: Starting for gameId: ${gameId}`);
-    connectWebSocket();
+    console.log(`🎮 useWebSocketLeaderboard: Starting for gameId: ${gameId} (subscriber: ${subscriberIdRef.current})`);
+    connectToPooledWebSocket();
 
     return () => {
-      disconnectWebSocket();
+      disconnectFromPool();
     };
   }, [gameId, userToken]);
 
   /**
-   * Connect to WebSocket
+   * Connect to pooled WebSocket
    */
-  const connectWebSocket = async () => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      return; // Already connected
-    }
-
+  const connectToPooledWebSocket = async () => {
     try {
-      const wsUrl = process.env.NODE_ENV === 'development' 
-        ? 'wss://ws-dev.buzzwordbingo.live'
-        : 'wss://ws.buzzwordbingo.live';
-      
       // Determine which token to use
       let token: string | null = null;
       let connectionType = '';
 
       if (userToken) {
-        // User session - use provided token
         token = userToken;
         connectionType = 'user';
-        console.log('Connecting to WebSocket with user token for:', typeof input === 'object' ? input?.nickname : 'user');
+        console.log('🔐 Connecting with user token for:', typeof input === 'object' ? input?.nickname : 'user');
       } else {
-        // Public access - get or generate public token
         token = await getPublicToken();
         connectionType = 'public';
-        console.log('Connecting to WebSocket with public token for status board');
+        console.log('🌐 Connecting with public token for status board');
       }
 
       if (!token) {
@@ -135,115 +227,70 @@ export function useWebSocketLeaderboard(input: SessionInfo | string | null): Use
         setLoading(false);
         return;
       }
+
+      // Get pooled connection
+      const connection = await getPooledConnection(gameId!, token, connectionType);
+      if (!connection) {
+        setError('Failed to establish WebSocket connection');
+        setLoading(false);
+        return;
+      }
+
+      connectionRef.current = connection;
       
-      const url = `${wsUrl}?token=${encodeURIComponent(token)}`;
-      console.log(`WebSocket URL (${connectionType}):`, wsUrl); // Don't log the full URL with token for security
+      // Add this subscriber to the connection
+      connection.subscribers.add(subscriberIdRef.current);
       
-      const ws = new WebSocket(url);
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        console.log(`WebSocket connected successfully (${connectionType})`);
-        setIsConnected(true);
-        setError(null);
-        reconnectAttempts.current = 0;
-        
-        // Subscribe to game updates
-        if (gameId) {
-          console.log('Subscribing to game updates for:', gameId);
-          ws.send(JSON.stringify({
-            action: 'subscribe',
-            gameId: gameId
-          }));
-        }
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          handleWebSocketMessage(data);
-        } catch (error) {
-          console.error('Failed to parse WebSocket message:', error);
-        }
-      };
-
-      ws.onclose = (event) => {
-        console.log('WebSocket disconnected:', { 
-          code: event.code, 
-          reason: event.reason,
-          wasClean: event.wasClean 
-        });
-        setIsConnected(false);
-        wsRef.current = null;
-        
-        // Handle different close codes
-        if (event.code === 1006) {
-          setError('WebSocket connection failed - possibly authorization issue');
-        } else if (event.code === 1002) {
-          setError('WebSocket protocol error');
-        } else if (event.code === 1003) {
-          setError('WebSocket connection rejected');
-        } else if (event.code === 1011) {
-          setError('WebSocket server error');
-        }
-        
-        // Attempt to reconnect if not a normal closure
-        if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
-          scheduleReconnect();
-        }
-      };
-
-      ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        setError('WebSocket connection error - check network connectivity');
-      };
+      // Set up message callback for this subscriber
+      subscriberCallbacks.set(subscriberIdRef.current, handleWebSocketMessage);
+      
+      setIsConnected(true);
+      setError(null);
+      
+      console.log(`🔗 Subscribed to pooled connection for ${gameId} (total subscribers: ${connection.subscribers.size})`);
 
     } catch (error) {
-      console.error('Failed to create WebSocket connection:', error);
+      console.error('Failed to connect to pooled WebSocket:', error);
       setError('Failed to connect to real-time updates');
       setLoading(false);
     }
   };
 
   /**
-   * Disconnect from WebSocket
+   * Disconnect from pooled WebSocket
    */
-  const disconnectWebSocket = () => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-
-    if (wsRef.current) {
-      wsRef.current.close(1000, 'Component unmounting');
-      wsRef.current = null;
+  const disconnectFromPool = () => {
+    if (connectionRef.current) {
+      // Remove this subscriber from the connection
+      connectionRef.current.subscribers.delete(subscriberIdRef.current);
+      
+      console.log(`🔗 Unsubscribed from pooled connection for ${gameId} (remaining subscribers: ${connectionRef.current.subscribers.size})`);
+      
+      // If no more subscribers, close the connection
+      if (connectionRef.current.subscribers.size === 0) {
+        console.log(`🔌 Closing unused pooled connection for ${gameId}`);
+        connectionRef.current.ws.close(1000, 'No more subscribers');
+        connectionPool.delete(connectionRef.current.connectionKey);
+      }
+      
+      connectionRef.current = null;
     }
     
+    // Clean up callback
+    subscriberCallbacks.delete(subscriberIdRef.current);
     setIsConnected(false);
-  };
-
-  /**
-   * Schedule reconnection attempt
-   */
-  const scheduleReconnect = () => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
-
-    const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000); // Exponential backoff, max 30s
-    console.log(`Scheduling WebSocket reconnect in ${delay}ms (attempt ${reconnectAttempts.current + 1})`);
-    
-    reconnectTimeoutRef.current = setTimeout(() => {
-      reconnectAttempts.current++;
-      connectWebSocket();
-    }, delay);
   };
 
   /**
    * Handle incoming WebSocket messages
    */
   const handleWebSocketMessage = (data: any) => {
-    console.log(`📨 WebSocket message received:`, data);
+    if (data.type === 'connection_lost') {
+      setIsConnected(false);
+      return;
+    }
+
+    console.log(`📨 WebSocket message received (${subscriberIdRef.current}):`, data);
     setLastUpdate(new Date().toISOString());
 
     switch (data.type) {
