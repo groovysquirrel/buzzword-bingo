@@ -5,37 +5,29 @@ import { APIGatewayProxyEvent } from "aws-lambda";
 import { handler } from "../lib/handler";
 import { Player, JoinGameResponse } from "../lib/types";
 import { generateSessionId, createSessionToken } from "../auth/token";
-import { getCurrentGameId, getCurrentActiveGameId } from "../lib/gameUtils";
+import { getCurrentActiveGameId } from "../lib/gameUtils";
 import { addEvent } from "../lib/gameEvents";
+import { validateNickname } from "../lib/userValidation";
 
 const dynamoDb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+
+
+  
 
 async function joinGame(event: APIGatewayProxyEvent) {
   const body = JSON.parse(event.body || "{}");
   const { nickname } = body;
 
-  if (!nickname || nickname.trim().length === 0) {
-    throw new Error("Nickname is required");
-  }
+  const sessionId = generateSessionId();
 
-  if (nickname.length > 20) {
-    throw new Error("Nickname must be 20 characters or less");
-  }
-
-  // Basic profanity filter (simple version)
-  const profanityWords = ["fuck", "shit", "damn", "hell"];
-  const lowercaseNickname = nickname.toLowerCase();
-  if (profanityWords.some(word => lowercaseNickname.includes(word))) {
-    throw new Error("Please choose a different nickname");
-  }
+  const trimmedNickname = await validateNickname(nickname, sessionId);
 
   // Generate session ID and create player record
-  const sessionId = generateSessionId();
   const now = new Date().toISOString();
 
   const player: Player = {
     sessionId,
-    nickname: nickname.trim(),
+    nickname: trimmedNickname,
     joinedAt: now,
   };
 
@@ -56,6 +48,10 @@ async function joinGame(event: APIGatewayProxyEvent) {
 
   // Get the current active game ID from database
   const currentGameId = await getCurrentActiveGameId();
+
+  if (!currentGameId) {
+    throw new Error("No active game found. Please wait for a game to start.");
+  }
 
   // Publish join event for real-time updates
   await addEvent("player_joined", {

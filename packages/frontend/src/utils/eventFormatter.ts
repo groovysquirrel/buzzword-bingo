@@ -67,6 +67,7 @@ type UnifiedEvent = GameEvent | ActivityEvent;
 export const EVENT_TYPES = {
   // Player Events
   PLAYER_JOINED: 'player_joined',
+  NICKNAME_UPDATED: 'nickname_updated',
   WORD_MARKED: 'word_marked',
   BINGO_CALLED: 'bingo_called',
   BINGO_COMPLETED: 'bingo_completed',
@@ -195,6 +196,8 @@ export const formatEventMessage = (event: UnifiedEvent): string => {
   switch (normalized.type) {
     case EVENT_TYPES.PLAYER_JOINED:
       return `${normalized.data.nickname} joined Buzzword Bingo!`;
+    case EVENT_TYPES.NICKNAME_UPDATED:
+      return `${normalized.data.oldNickname} is now known as ${normalized.data.newNickname}`;
     case EVENT_TYPES.WORD_MARKED:
       return `${normalized.data.nickname} heard a buzzword: "${normalized.data.word}"`;
     case EVENT_TYPES.BINGO_CALLED:
@@ -220,6 +223,7 @@ export const formatEventMessage = (event: UnifiedEvent): string => {
 export const getEventIcon = (type: string): string => {
   switch (type) {
     case EVENT_TYPES.PLAYER_JOINED: return "👤";
+    case EVENT_TYPES.NICKNAME_UPDATED: return "🏷️";
     case EVENT_TYPES.WORD_MARKED: return "📝";
     case EVENT_TYPES.BINGO_CALLED: return "🎯";
     case EVENT_TYPES.BINGO_COMPLETED: return "🏆";
@@ -243,6 +247,8 @@ export const getEventColor = (type: string): string => {
       return "#059669";
     case EVENT_TYPES.WORD_MARKED:
       return "#3b82f6";
+    case EVENT_TYPES.NICKNAME_UPDATED:
+      return "#8b5cf6";
     default:
       return "#1e293b";
   }

@@ -92,6 +92,15 @@
   letter-spacing: -0.025em;
 }
 
+/* Medal Icons for Top 3 Players */
+.medal-icon {
+  display: inline-block;
+  margin-right: 0.5rem;
+  font-size: 1.1rem;
+  vertical-align: middle;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
 .leaderboard-item--current .player-nickname {
   color: #ffffff;
 }
@@ -102,6 +111,11 @@
 
 .leaderboard-item--current .player-details {
   color: #dbeafe;
+}
+
+.leaderboard-item--current .text-muted {
+  color: #ffffff !important;
+  opacity: 0.9;
 }
 
 /* === PERFORMANCE ANALYTICS === */

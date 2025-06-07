@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { API } from 'aws-amplify';
-import { Card, Row, Col, Button, Badge, Container, Modal } from 'react-bootstrap';
+import { Button, Modal } from 'react-bootstrap';
 import { useWebSocketLeaderboard } from '../../hooks/useWebSocketLeaderboard';
 import './GameController.css';
 
@@ -66,40 +66,7 @@ interface GameControllerProps {
   className?: string;
 }
 
-/**
- * Valid game states and their descriptions
- */
-const GAME_STATES = {
-  open: 'Players can join',
-  started: 'Game is active',
-  paused: 'Game is paused', 
-  bingo: 'BINGO called!',
-  ended: 'Game completed',
-  cancelled: 'Game cancelled'
-} as const;
 
-/**
- * State transition buttons and their styling
- */
-const STATE_ACTIONS = {
-  started: {
-    pause: { label: 'Pause Game', icon: '⏸️', class: 'warning', newState: 'paused' },
-    end: { label: 'End Game', icon: '🏁', class: 'primary', newState: 'ended' }
-  },
-  paused: {
-    resume: { label: 'Resume Game', icon: '▶️', class: 'success', newState: 'started' }
-  },
-  bingo: {
-    verify: { label: 'Verify & End', icon: '✅', class: 'success', newState: 'ended', action: 'verify-bingo' },
-    reject: { label: 'Reject BINGO', icon: '↩️', class: 'warning', newState: 'started' }
-  },
-  ended: {
-    new: { label: 'New Game', icon: '🎲', class: 'primary', newState: 'new' }
-  },
-  cancelled: {
-    new: { label: 'New Game', icon: '🎲', class: 'primary', newState: 'new' }
-  }
-};
 
 /**
  * Confirmation Modal Component
@@ -161,16 +128,12 @@ export const GameController: React.FC<GameControllerProps> = ({
   const [gameDetails, setGameDetails] = useState<GameStatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   
-  // New state for editing and live timer
-  const [isEditingGameId, setIsEditingGameId] = useState(false);
-  const [editedGameId, setEditedGameId] = useState<string>("");
+  // Live timer state
   const [liveDuration, setLiveDuration] = useState<number | null>(null);
 
   // Use WebSocket for real-time game state updates
   const { gameStatus: webSocketGameStatus } = useWebSocketLeaderboard(gameId);
 
-  // Check if this is a compact horizontal layout
-  const isCompact = className?.includes('horizontal');
 
   // Update local game status when WebSocket provides updates
   useEffect(() => {
@@ -405,10 +368,8 @@ export const GameController: React.FC<GameControllerProps> = ({
     setIsLoading(true);
     setError(null);
 
-    // Use edited game ID if available, otherwise use current game ID  
-    const targetGameId = editedGameId.trim() 
-      ? editedGameId.trim()
-      : gameId || 'new';
+    // Use current game ID or create a new one
+    const targetGameId = gameId || 'new';
 
     try {
       // Step 1: Create the new game
@@ -439,10 +400,6 @@ export const GameController: React.FC<GameControllerProps> = ({
           setError("Game created but failed to start automatically");
         }
         
-        // Clear editing state after successful creation
-        setIsEditingGameId(false);
-        setEditedGameId("");
-        
       } else {
         setError(result.error || "Failed to create new game");
       }
@@ -452,141 +409,6 @@ export const GameController: React.FC<GameControllerProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
-
-  /**
-   * Get available action buttons for current state
-   */
-  const getActionButtons = () => {
-    if (!gameStatus || gameStatus === "none") {
-        return (
-        <Col xs={12} sm={6} md={4} key="create-game">
-          <Button
-            onClick={createNewGame}
-            disabled={isLoading}
-            variant="primary"
-            size="lg"
-            className="w-100 game-action-btn--primary"
-          >
-            <span className="me-2">🎲</span>
-            Create New Game
-          </Button>
-        </Col>
-      );
-    }
-
-    const actions = STATE_ACTIONS[gameStatus as keyof typeof STATE_ACTIONS];
-    if (!actions) return null;
-
-    return Object.entries(actions).map(([actionKey, action]) => (
-      <Col xs={12} sm={6} md={4} key={actionKey}>
-        <Button
-          onClick={() => {
-            if (action.newState === 'new') {
-              createNewGame();
-            } else {
-              const broadcast = 'broadcast' in action ? Boolean(action.broadcast) : true;
-              const actionParam = 'action' in action ? action.action as string : undefined;
-              changeGameState(action.newState, undefined, broadcast, actionParam);
-            }
-          }}
-          disabled={isLoading}
-          variant={action.class === 'success' ? 'success' : 
-                  action.class === 'warning' ? 'warning' : 
-                  action.class === 'danger' ? 'danger' : 
-                  action.class === 'primary' ? 'primary' : 'secondary'}
-          size="lg"
-          className={`w-100 game-action-btn--${action.class}`}
-        >
-          <span className="me-2">{action.icon}</span>
-          {action.label}
-        </Button>
-      </Col>
-    ));
-  };
-
-  /**
-   * Get compact action buttons for horizontal layout
-   */
-  const getCompactActionButtons = () => {
-    if (!gameStatus || gameStatus === "none") {
-        return (
-        <Button
-          onClick={createNewGame}
-          disabled={isLoading}
-          variant="primary"
-          size="sm"
-          className="compact-action-btn"
-        >
-          🎲 New Game
-        </Button>
-      );
-    }
-
-    const buttons = [];
-
-    // Special handling for bingo state
-    if (gameStatus === 'bingo') {
-      buttons.push(
-        <Button
-          key="confirm-bingo"
-          onClick={() => changeGameState('ended', undefined, true, 'verify-bingo')}
-          disabled={isLoading}
-          variant="success"
-          size="sm"
-          className="compact-action-btn"
-          title="Confirm BINGO and end game"
-        >
-          ✅ Confirm Bingo
-        </Button>
-      );
-      buttons.push(
-        <Button
-          key="reject-bingo"
-          onClick={() => changeGameState('started')}
-          disabled={isLoading}
-          variant="warning"
-          size="sm"
-          className="compact-action-btn"
-          title="Reject BINGO and continue game"
-        >
-          ↩️ Reject
-        </Button>
-      );
-    } else {
-      // Standard action buttons based on current state
-      const actions = STATE_ACTIONS[gameStatus as keyof typeof STATE_ACTIONS];
-      if (actions) {
-        Object.entries(actions).forEach(([actionKey, action]) => {
-          buttons.push(
-            <Button
-              key={actionKey}
-              onClick={() => {
-                if (action.newState === 'new') {
-                  createNewGame();
-                } else {
-                  const broadcast = 'broadcast' in action ? Boolean(action.broadcast) : true;
-                  const actionParam = 'action' in action ? action.action as string : undefined;
-                  changeGameState(action.newState, undefined, broadcast, actionParam);
-                }
-              }}
-              disabled={isLoading}
-              variant={action.class === 'success' ? 'success' : 
-                      action.class === 'warning' ? 'warning' : 
-                      action.class === 'danger' ? 'danger' : 
-                      action.class === 'primary' ? 'primary' : 'secondary'}
-              size="sm"
-              className="compact-action-btn"
-              title={action.label}
-            >
-              {action.icon} {action.label.split(' ').slice(0, 2).join(' ')}
-            </Button>
-          );
-        });
-      }
-    }
-
-    return buttons;
   };
 
   /**
@@ -606,27 +428,6 @@ export const GameController: React.FC<GameControllerProps> = ({
     } else {
       return `${secs}s`;
     }
-  };
-
-  /**
-   * Clear localStorage session (for debugging and after purges)
-   */
-  const clearLocalSession = () => {
-    showConfirmation({
-      title: 'Clear Session Data',
-      message: 'This will clear all browser session data and log out the current user. The page will reload automatically.',
-      confirmText: 'Clear & Reload',
-      variant: 'danger',
-      icon: '🗑️',
-      onConfirm: () => {
-        hideConfirmation();
-        localStorage.removeItem('buzzword-bingo-session');
-        localStorage.removeItem('buzzword-bingo-public-token');
-        localStorage.removeItem('buzzword-bingo-device-id');
-        console.log('✅ Cleared all localStorage session data');
-        window.location.reload();
-      }
-    });
   };
 
   // Initialize component
@@ -660,44 +461,6 @@ export const GameController: React.FC<GameControllerProps> = ({
   }, [gameDetails, gameStatus]);
 
   /**
-   * Handle game ID editing
-   */
-  const handleEditGameId = () => {
-    setEditedGameId(gameId || "");
-    setIsEditingGameId(true);
-  };
-
-  const handleSaveGameId = async () => {
-    if (!editedGameId.trim() || editedGameId === gameId) {
-      setIsEditingGameId(false);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      // TODO: Implement game rename API call
-      console.log("Renaming game from", gameId, "to", editedGameId);
-      
-      // For now, just update local state
-      setGameId(editedGameId);
-      setIsEditingGameId(false);
-      
-      // Notify parent component
-      onGameStateChange?.(editedGameId, gameStatus);
-    } catch (error) {
-      console.error("Failed to rename game:", error);
-      setError("Failed to rename game");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditingGameId(false);
-    setEditedGameId("");
-  };
-
-  /**
    * Show confirmation modal
    */
   const showConfirmation = (config: {
@@ -722,329 +485,129 @@ export const GameController: React.FC<GameControllerProps> = ({
   };
 
   return (
-    <Container fluid className={`${className} p-0`}>
-      {isCompact ? (
-        // Compact Horizontal Layout for StatusScreen
-        <div className={`game-controller-compact ${isLoading ? 'loading' : ''}`}>
-          {/* Top row with metadata and timer */}
-          <div className="gc-top-row">
-            <div className="gc-meta-row">
-              <span>
-                <span className="gc-meta-label">Game ID:</span>
-                {isEditingGameId ? (
-                  <>
-                  <input
-                    type="text"
-                    className="gc-meta-input"
-                    value={editedGameId}
-                    onChange={(e) => setEditedGameId(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleSaveGameId();
-                      if (e.key === 'Escape') handleCancelEdit();
-                    }}
-                    autoFocus
-                  />
-                    <span
-                      className="gc-meta-edit gc-meta-confirm"
-                      onClick={handleSaveGameId}
-                      title="Confirm Game ID"
-                    >
-                      ✓
-                    </span>
-                    <span
-                      className="gc-meta-edit gc-meta-cancel"
-                      onClick={handleCancelEdit}
-                      title="Cancel Edit"
-                    >
-                      ✕
-                    </span>
-                  </>
-                ) : (
-                  <>
-                  <span className="gc-meta-value">{gameId || "-"}</span>
-                <span
-                  className="gc-meta-edit"
-                      onClick={handleEditGameId}
-                  title="Edit Game ID"
-                >
-                  ✏️
-                </span>
-                  </>
-                )}
-              </span>
-            </div>
+    <div className={`game-controller ${className}`}>
+      {/* Status Badge */}
+      {gameId && (
+        <span className={`status-badge status-badge--${gameStatus}`}>
+          {gameStatus.toUpperCase()}
+        </span>
+      )}
+      
+      {/* Timer */}
+      <div className="timer-display">
+        {gameStatus === 'started' && liveDuration !== null
+          ? formatDuration(liveDuration)
+          : formatDuration(gameDetails?.duration || 0)}
+        {gameStatus === 'started' && <span className="live-dot">●</span>}
+      </div>
 
-            <div className="gc-timer">
-              {gameStatus === 'started' && liveDuration !== null
-                ? formatDuration(liveDuration)
-                : formatDuration(gameDetails?.duration || 0)}
-              {gameStatus === 'started' && <span className="live-indicator">●</span>}
-            </div>
-          </div>
+      {/* Action Buttons */}
+      <button
+        className="action-btn action-btn--new"
+        onClick={createNewGame}
+        disabled={isLoading}
+        title="Create New Game"
+      >
+        ➕
+      </button>
 
-          {/* Bottom row with info and buttons */}
-          <div className="gc-bottom-row">
-            <div className="gc-words-info">
-              Using {gameDetails?.wordCount || 0} words in a 5x5 game
-            </div>
-            <div className="gc-btn-row">
-              {getCompactActionButtons()}
-            </div>
-          </div>
+      {gameStatus === 'started' && (
+        <button
+          className="action-btn action-btn--pause"
+          onClick={() => changeGameState('paused')}
+          disabled={isLoading}
+          title="Pause Game"
+        >
+          ⏸️
+        </button>
+      )}
+
+      {gameStatus === 'paused' && (
+        <button
+          className="action-btn action-btn--resume"
+          onClick={() => changeGameState('started')}
+          disabled={isLoading}
+          title="Resume Game"
+        >
+          ▶️
+        </button>
+      )}
+
+      {(gameStatus === 'started' || gameStatus === 'paused') && (
+        <button
+          className="action-btn action-btn--end"
+          onClick={() => showConfirmation({
+            title: 'End Game',
+            message: 'Are you sure you want to end this game? This cannot be undone.',
+            confirmText: 'End Game',
+            variant: 'danger',
+            icon: '🏁',
+            onConfirm: () => {
+              hideConfirmation();
+              changeGameState('ended');
+            }
+          })}
+          disabled={isLoading}
+          title="End Game"
+        >
+          🏁
+        </button>
+      )}
+
+      {gameStatus === 'bingo' && (
+        <>
+          <button
+            className="action-btn action-btn--confirm"
+            onClick={() => showConfirmation({
+              title: 'Confirm BINGO',
+              message: 'Verify and end the game with this BINGO winner?',
+              confirmText: 'Confirm BINGO',
+              variant: 'success',
+              icon: '✅',
+              onConfirm: () => {
+                hideConfirmation();
+                changeGameState('ended', undefined, true, 'verify-bingo');
+              }
+            })}
+            disabled={isLoading}
+            title="Confirm BINGO & End Game"
+          >
+            ✅
+          </button>
+
+          <button
+            className="action-btn action-btn--reject"
+            onClick={() => showConfirmation({
+              title: 'Reject BINGO',
+              message: 'Reject this BINGO claim and continue the game?',
+              confirmText: 'Reject BINGO',
+              variant: 'warning',
+              icon: '❌',
+              onConfirm: () => {
+                hideConfirmation();
+                changeGameState('started');
+              }
+            })}
+            disabled={isLoading}
+            title="Reject BINGO & Continue"
+          >
+            ❌
+          </button>
+        </>
+      )}
+
+      {/* Error Display */}
+      {error && (
+        <div className="error-message">
+          ⚠️ {error}
         </div>
-      ) : (
-        // Full Card Layout
-        <Card className="game-controller-card border-0 shadow-lg">
-          <Card.Header className="game-controller__header border-0">
-            <Row className="align-items-center">
-              <Col xs={12} md={8}>
-                <h3 className="game-controller__title mb-0">
-                  <span className="game-controller__title-icon me-2">🎮</span>
-                  Game Controller
-                </h3>
-              </Col>
-              <Col xs={12} md={4} className="text-md-end mt-3 mt-md-0">
-                <Button 
-                  variant="outline-light"
-                  size="sm"
-                  onClick={fetchCurrentGame}
-                  className="game-controller__refresh"
-                  disabled={isLoading}
-                >
-                  🔄 <span className="ms-1">Refresh</span>
-                </Button>
-              </Col>
-            </Row>
-          </Card.Header>
+      )}
 
-          <Card.Body className="p-0">
-            {/* Game Status Grid */}
-            <Row className="g-0">
-              {/* Main Status Section */}
-              <Col xs={12} lg={8} className="game-status__main">
-                <div className="p-4">
-                  {/* Game ID Display */}
-                    <div className="game-id-display mb-4">
-                      <div className="game-id-display__label">Game Session ID</div>
-                    <div className="game-id-display__value d-flex align-items-center">
-                      {isEditingGameId ? (
-                        <>
-                          <input
-                            type="text"
-                            className="form-control me-2"
-                            value={editedGameId}
-                            onChange={(e) => setEditedGameId(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleSaveGameId();
-                              if (e.key === 'Escape') handleCancelEdit();
-                            }}
-                            autoFocus
-                            style={{ maxWidth: '200px' }}
-                          />
-                          <button
-                            className="btn btn-sm btn-success me-1"
-                            onClick={handleSaveGameId}
-                            title="Confirm Game ID"
-                          >
-                            ✓
-                          </button>
-                          <button
-                            className="btn btn-sm btn-secondary"
-                            onClick={handleCancelEdit}
-                            title="Cancel Edit"
-                          >
-                            ✕
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <span className="me-2">{gameId}</span>
-                          <button
-                            className="btn btn-sm btn-outline-secondary"
-                            onClick={handleEditGameId}
-                            title="Edit Game ID"
-                          >
-                            ✏️
-                          </button>
-                        </>
-                  )}
-                    </div>
-                  </div>
-
-                  {/* Status Badge */}
-                  {gameId && (
-                    <Badge 
-                      className={`game-status-badge game-status-badge--${gameStatus} mb-4`}
-                      pill
-                    >
-                      <span className="game-status-badge__icon me-2">
-                        {gameStatus === 'started' && '▶️'}
-                        {gameStatus === 'open' && '🟢'}
-                        {gameStatus === 'paused' && '⏸️'}
-                        {gameStatus === 'bingo' && '🎯'}
-                        {gameStatus === 'ended' && '🏁'}
-                        {gameStatus === 'cancelled' && '❌'}
-                        {!['started', 'open', 'paused', 'bingo', 'ended', 'cancelled'].includes(gameStatus) && '⚪'}
-                      </span>
-                      {GAME_STATES[gameStatus as keyof typeof GAME_STATES] || gameStatus}
-                    </Badge>
-                  )}
-
-                  {/* No Game State */}
-                  {!gameId && (
-                    <div className="text-center py-4">
-                      <div className="mb-3">
-                        <span style={{ fontSize: '3rem' }}>🎲</span>
-                      </div>
-                      <h5 className="text-muted">No Active Game</h5>
-                      <p className="text-muted mb-3">Create a new game to get started</p>
-                      
-                      {/* Game ID Input for New Game */}
-                      <div className="game-id-input mb-3">
-                        <label className="form-label text-muted">Game ID for New Game:</label>
-                        <div className="d-flex align-items-center justify-content-center">
-                          {isEditingGameId ? (
-                            <>
-                              <input
-                                type="text"
-                                className="form-control me-2"
-                                value={editedGameId}
-                                onChange={(e) => setEditedGameId(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') handleSaveGameId();
-                                  if (e.key === 'Escape') handleCancelEdit();
-                                }}
-                                placeholder="Enter game ID or leave empty for auto-generated"
-                                autoFocus
-                                style={{ maxWidth: '300px' }}
-                              />
-                              <button
-                                className="btn btn-sm btn-success me-1"
-                                onClick={handleSaveGameId}
-                                title="Confirm Game ID"
-                              >
-                                ✓
-                              </button>
-                              <button
-                                className="btn btn-sm btn-secondary"
-                                onClick={handleCancelEdit}
-                                title="Cancel Edit"
-                              >
-                                ✕
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <span className="me-2 text-muted">
-                                {editedGameId || 'Auto-generated'}
-                              </span>
-                              <button
-                                className="btn btn-sm btn-outline-secondary"
-                                onClick={handleEditGameId}
-                                title="Set Custom Game ID"
-                              >
-                                ✏️
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </Col>
-
-              {/* Sidebar Stats */}
-              {gameId && gameDetails && (
-                <Col xs={12} lg={4} className="game-status__sidebar border-start">
-                  <div className="p-4">
-                    <h6 className="text-muted mb-3 text-uppercase">Game Statistics</h6>
-                    <div className="game-stats">
-                      <Row className="game-stat align-items-center py-2">
-                        <Col>
-                          <span className="game-stat__label">Duration</span>
-                        </Col>
-                        <Col xs="auto">
-                          <span className="game-stat__value">
-                            {gameStatus === 'started' && liveDuration !== null ? 
-                              formatDuration(liveDuration) : 
-                              formatDuration(gameDetails.duration)
-                            }
-                            {gameStatus === 'started' && <span className="live-indicator ms-1">●</span>}
-                          </span>
-                        </Col>
-                      </Row>
-                      <Row className="game-stat align-items-center py-2">
-                        <Col>
-                          <span className="game-stat__label">Word Count</span>
-                        </Col>
-                        <Col xs="auto">
-                          <span className="game-stat__value">{gameDetails.wordCount}</span>
-                        </Col>
-                      </Row>
-                      {gameDetails.updatedAt && (
-                        <Row className="game-stat align-items-center py-2">
-                          <Col>
-                            <span className="game-stat__label">Last Updated</span>
-                          </Col>
-                          <Col xs="auto">
-                            <span className="game-stat__value">
-                              {new Date(gameDetails.updatedAt).toLocaleTimeString()}
-                            </span>
-                          </Col>
-                        </Row>
-                      )}
-                    </div>
-                  </div>
-                </Col>
-              )}
-            </Row>
-
-            {/* Error Display */}
-            {error && (
-              <div className="px-4 pb-4">
-                <div className="alert alert-danger d-flex align-items-center mb-0" role="alert">
-                  <span className="me-2">⚠️</span>
-                  <div>{error}</div>
-                </div>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="game-actions border-top bg-light">
-              <Container>
-                <Row className="py-4 g-3 justify-content-center">
-                  {getActionButtons()}
-                </Row>
-                
-                {/* Debug/Admin Tools */}
-                <Row className="border-top pt-3 pb-2">
-                  <Col xs={12} className="text-center">
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      onClick={clearLocalSession}
-                      className="game-action-btn--debug"
-                    >
-                      <span className="me-1">🗑️</span>
-                      Clear Session
-                    </Button>
-                  </Col>
-                </Row>
-              </Container>
-            </div>
-          </Card.Body>
-
-          {/* Loading Overlay */}
-          {isLoading && (
-            <div className="game-loading position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
-              <div className="text-center">
-                <div className="game-loading__spinner mb-2">⏳</div>
-                <span className="game-loading__text">Processing...</span>
-              </div>
-    </div>
-          )}
-        </Card>
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="loading-overlay">
+          ⏳ Processing...
+        </div>
       )}
       
       {/* Confirmation Modal */}
@@ -1058,7 +621,7 @@ export const GameController: React.FC<GameControllerProps> = ({
         onConfirm={confirmationModal.onConfirm}
         onCancel={hideConfirmation}
       />
-    </Container>
+    </div>
   );
 };
 

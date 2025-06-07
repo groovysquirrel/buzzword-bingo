@@ -90,7 +90,31 @@ function App() {
                     fontWeight: "600"
                   }}
                 >
-                  📊 Status Board
+                  Game Board
+                </Nav.Link>
+              </LinkContainer>
+              <LinkContainer to="/resources">
+                <Nav.Link 
+                  className="fw-semibold me-2"
+                  style={{ 
+                    color: "#64748b",
+                    fontSize: "0.875rem",
+                    fontWeight: "600"
+                  }}
+                >
+                  Resources
+                </Nav.Link>
+              </LinkContainer>
+              <LinkContainer to="/settings">
+                <Nav.Link 
+                  className="fw-semibold me-2"
+                  style={{ 
+                    color: "#64748b",
+                    fontSize: "0.875rem",
+                    fontWeight: "600"
+                  }}
+                >
+                  Settings
                 </Nav.Link>
               </LinkContainer>
               {isAuthenticated ? (
@@ -104,19 +128,7 @@ function App() {
                         fontWeight: "600"
                       }}
                     >
-                      ⚙️ Admin Dashboard
-                    </Nav.Link>
-                  </LinkContainer>
-                  <LinkContainer to="/settings">
-                    <Nav.Link 
-                      className="fw-semibold me-2"
-                      style={{ 
-                        color: "#64748b",
-                        fontSize: "0.875rem",
-                        fontWeight: "600"
-                      }}
-                    >
-                      Settings
+                      System Manager
                     </Nav.Link>
                   </LinkContainer>
                   <Nav.Link 

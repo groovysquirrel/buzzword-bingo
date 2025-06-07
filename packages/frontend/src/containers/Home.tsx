@@ -98,7 +98,7 @@ export default function Home() {
                           color: "#1F2937"
                         }}
                       >
-                        ⚙️ Admin Dashboard
+                        System Manager
                       </Button>
                     </LinkContainer>
                   </Col>
@@ -145,7 +145,7 @@ export default function Home() {
                   <Col xs={12} md={6}>
                     <div className="p-3 rounded" style={{ backgroundColor: "#FEF3C7" }}>
                       <h6 className="fw-bold mb-2" style={{ color: "#1F2937" }}>
-                        ⚙️ Admin Dashboard
+                      System Manager
                       </h6>
                       <small style={{ color: "#374151" }}>
                         Manage games, test functionality, and monitor activity

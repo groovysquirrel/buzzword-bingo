@@ -70,6 +70,10 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Function"
     }
+    "UpdateProfileFunction": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
     "Uploads": {
       "name": string
       "type": "sst.aws.Bucket"

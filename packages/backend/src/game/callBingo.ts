@@ -8,6 +8,7 @@ import { addEvent } from "../lib/gameEvents";
 import { BingoProgress, StoredBingoCard } from "../lib/types";
 import { checkForBingo } from "../lib/gameUtils";
 import { WebSocketManager } from "../lib/websocketManager";
+import { getCurrentNickname } from "../lib/userValidation";
 
 const dynamoDb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
@@ -81,6 +82,9 @@ async function callBingo(event: APIGatewayProxyEvent) {
   }
 
   console.log(`🎯 BINGO called by ${session.nickname} (${session.sessionId}) in game ${gameId}`);
+
+  // Get current nickname from database (in case it was updated)
+  const currentNickname = await getCurrentNickname(session.sessionId, session.nickname);
 
   // Get game and verify it's in a valid state for BINGO calls
   const gameResult = await dynamoDb.send(new GetCommand({
@@ -167,9 +171,9 @@ async function callBingo(event: APIGatewayProxyEvent) {
     previousState: 'started',
     newState: 'bingo',
     timestamp: new Date().toISOString(),
-    reason: `BINGO called by ${session.nickname}`,
+    reason: `BINGO called by ${currentNickname}`,
     stateDescription: 'BINGO called - awaiting verification',
-    bingoCalledBy: session.nickname
+    bingoCalledBy: currentNickname
   });
 
   // Record the BINGO call in CompletedBingo table (pending verification)
@@ -186,17 +190,17 @@ async function callBingo(event: APIGatewayProxyEvent) {
     },
   }));
 
-  // Publish BINGO event
+  // Publish BINGO event - use fresh nickname
   await addEvent("bingo_called", {
-    nickname: session.nickname,
+    nickname: currentNickname,
     gameId,
     sessionId: session.sessionId,
     bingoType: bingoCheck.bingoType,
     winningWords: bingoCheck.winningWords,
-    message: `${session.nickname} called BINGO! (${bingoCheck.bingoType})`
+    message: `${currentNickname} called BINGO! (${bingoCheck.bingoType})`
   });
 
-  console.log(`✅ BINGO called successfully by ${session.nickname} - awaiting verification`);
+  console.log(`✅ BINGO called successfully by ${currentNickname} - awaiting verification`);
 
   return JSON.stringify({
     success: true,

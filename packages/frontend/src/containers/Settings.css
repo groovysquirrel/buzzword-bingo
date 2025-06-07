@@ -1,3 +1,170 @@
+/**
+ * Settings Page Styles
+ * 
+ * Professional, clean design for user settings and configuration
+ * Matches the corporate theme from the rest of the application
+ */
+
+.Settings {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.Settings .card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.Settings .card-header {
+  border-radius: 12px 12px 0 0 !important;
+  border-bottom: none;
+  padding: 1.25rem;
+}
+
+.Settings .card-body {
+  padding: 1.5rem;
+}
+
+.Settings .form-control {
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 0.95rem;
+  padding: 0.75rem 1rem;
+  transition: all 0.2s ease;
+}
+
+.Settings .form-control:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.Settings .btn {
+  border-radius: 8px;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.Settings .btn-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  border: none;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.Settings .btn-primary:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.Settings .btn-primary:disabled {
+  background: #9ca3af;
+  transform: none;
+  box-shadow: none;
+}
+
+.Settings .btn-outline-danger {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.Settings .btn-outline-danger:hover {
+  background-color: #ef4444;
+  border-color: #ef4444;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.Settings .alert {
+  border-radius: 8px;
+  border: none;
+  font-size: 0.9rem;
+}
+
+.Settings .alert-danger {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border-left: 4px solid #ef4444;
+}
+
+.Settings .alert-success {
+  background-color: #f0fdf4;
+  color: #166534;
+  border-left: 4px solid #22c55e;
+}
+
+.Settings .alert-info {
+  background-color: #eff6ff;
+  color: #1e40af;
+  border-left: 4px solid #3b82f6;
+}
+
+.Settings .bg-light {
+  background-color: #f8fafc !important;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.Settings code {
+  background-color: #f1f5f9;
+  color: #475569;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 0.85rem;
+}
+
+.Settings h5 {
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.Settings .text-muted {
+  color: #6b7280 !important;
+}
+
+.Settings .border-top {
+  border-color: #e5e7eb !important;
+}
+
+/* Modal Styling */
+.Settings .modal-content {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.Settings .modal-header {
+  border-bottom: 1px solid #e5e7eb;
+  border-radius: 12px 12px 0 0;
+}
+
+.Settings .modal-footer {
+  border-top: 1px solid #e5e7eb;
+  border-radius: 0 0 12px 12px;
+}
+
+/* Responsive Design */
+@media (max-width: 576px) {
+  .Settings .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .Settings .card-body {
+    padding: 1rem;
+  }
+  
+  .Settings .btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
 @media all and (min-width: 480px) {
   .Settings {
     padding: 60px 0;

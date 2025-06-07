@@ -6,6 +6,9 @@ interface ExtendedLeaderboardProps extends LeaderboardProps {
   isConnected?: boolean;
   gameStatus?: string;
   gameId?: string | null;
+  displayMode?: 'personal' | 'status';
+  showTrackItems?: boolean;
+  showStatusBar?: boolean;
 }
 
 /**
@@ -24,6 +27,64 @@ const getStatusDisplayText = (status: string): string => {
 };
 
 /**
+ * Calculate which players to display based on the display mode and current user position
+ */
+const getDisplayedPlayers = (
+  allPlayers: any[], 
+  currentSession: any, 
+  displayMode: 'personal' | 'status'
+) => {
+  if (displayMode === 'status') {
+    // Status screen: show top 10
+    const MAX_DISPLAYED_STATUS = 10;
+    return allPlayers.slice(0, MAX_DISPLAYED_STATUS);
+  }
+  
+  // Personal view: smart positioning with 5 players total
+  const MAX_DISPLAYED_PERSONAL = 5;
+  
+  if (!currentSession) {
+    // No current user, show top 5
+    return allPlayers.slice(0, MAX_DISPLAYED_PERSONAL);
+  }
+  
+  const currentUserIndex = allPlayers.findIndex(player => player.sessionId === currentSession.sessionId);
+  
+  if (currentUserIndex === -1) {
+    // Current user not found, show top 5
+    return allPlayers.slice(0, MAX_DISPLAYED_PERSONAL);
+  }
+  
+  if (allPlayers.length <= MAX_DISPLAYED_PERSONAL) {
+    // Less than 5 total players, show all
+    return allPlayers;
+  }
+  
+  const currentUserRank = currentUserIndex + 1; // 1-based rank
+  const totalPlayers = allPlayers.length;
+  
+  if (currentUserRank <= 5) {
+    // User is in top 5, show top 5
+    return allPlayers.slice(0, MAX_DISPLAYED_PERSONAL);
+  } else if (currentUserRank > totalPlayers - 3) {
+    // User is in bottom 3, show the 4 players ahead of them + current user
+    // This ensures we show 5 players total
+    const startIndex = Math.max(0, totalPlayers - MAX_DISPLAYED_PERSONAL);
+    return allPlayers.slice(startIndex);
+  } else {
+    // User is not in top 5 and not in bottom 3
+    // Show current position with 2 ahead and 2 behind
+    const startIndex = Math.max(0, currentUserIndex - 2);
+    const endIndex = Math.min(totalPlayers, startIndex + MAX_DISPLAYED_PERSONAL);
+    
+    // Adjust start if we're near the end (to always show 5 players)
+    const adjustedStartIndex = Math.max(0, endIndex - MAX_DISPLAYED_PERSONAL);
+    
+    return allPlayers.slice(adjustedStartIndex, endIndex);
+  }
+};
+
+/**
  * Corporate Performance Dashboard Component
  * 
  * Displays real-time rankings of assessment participants with comprehensive metrics.
@@ -34,6 +95,8 @@ const getStatusDisplayText = (status: string): string => {
  * - Enterprise-responsive design for all device types
  * - Clean, professional data visualization layout
  * - Subtle connection and session status indicators
+ * - Smart display limiting: 10 players for status view, 5 players for personal view
+ * - Personal view positioning: Top 5 if user in top 5, otherwise user + 2 ahead/behind
  * 
  * @param leaderboard - Complete performance dashboard data
  * @param currentSession - Current professional's session (for highlighting)
@@ -41,6 +104,7 @@ const getStatusDisplayText = (status: string): string => {
  * @param isConnected - WebSocket connection status
  * @param gameStatus - Current assessment session status
  * @param gameId - Current game session identifier
+ * @param displayMode - 'personal' for 5-player user-centered view, 'status' for top 10 view
  */
 export function LeaderboardTable({ 
   leaderboard, 
@@ -48,7 +112,10 @@ export function LeaderboardTable({
   showDetails = true,
   isConnected = true,
   gameStatus = "standby",
-  gameId = null
+  gameId = null,
+  displayMode = 'personal',
+  showTrackItems = true,
+  showStatusBar = true
 }: ExtendedLeaderboardProps) {
   if (!leaderboard || leaderboard.leaderboard.length === 0) {
     return (
@@ -59,6 +126,37 @@ export function LeaderboardTable({
         </div>
         
         {/* Status Bar for Empty State */}
+        {showStatusBar && (
+          <div className="leaderboard-status-bar">
+            <div className="leaderboard-status-bar__item">
+              <span className="leaderboard-status-bar__label">ID:</span>
+              <span className="leaderboard-status-bar__value">{gameId || "..."}</span>
+            </div>
+            <div className="leaderboard-status-bar__item">
+              <span className={`leaderboard-status-bar__dot ${isConnected ? 'leaderboard-status-bar__dot--connected' : 'leaderboard-status-bar__dot--disconnected'}`}></span>
+              <span className="leaderboard-status-bar__value">{isConnected ? 'Live' : 'Offline'}</span>
+            </div>
+            <div className="leaderboard-status-bar__item">
+              <span className="leaderboard-status-bar__value leaderboard-status-bar__value--status">{getStatusDisplayText(gameStatus)}</span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Get the players to display based on the mode
+  const displayedPlayers = getDisplayedPlayers(leaderboard.leaderboard, currentSession, displayMode);
+  
+  // Calculate if we're showing a subset and need to indicate truncation
+  const totalPlayers = leaderboard.leaderboard.length;
+  const isShowingSubset = displayedPlayers.length < totalPlayers;
+  const firstDisplayedRank = leaderboard.leaderboard.findIndex(p => p.sessionId === displayedPlayers[0].sessionId) + 1;
+
+  return (
+    <div className="leaderboard-table">
+      {/* Subtle Status Bar */}
+      {showStatusBar && (
         <div className="leaderboard-status-bar">
           <div className="leaderboard-status-bar__item">
             <span className="leaderboard-status-bar__label">ID:</span>
@@ -72,31 +170,22 @@ export function LeaderboardTable({
             <span className="leaderboard-status-bar__value leaderboard-status-bar__value--status">{getStatusDisplayText(gameStatus)}</span>
           </div>
         </div>
-      </div>
-    );
-  }
+      )}
 
-  return (
-    <div className="leaderboard-table">
-      {/* Subtle Status Bar */}
-      <div className="leaderboard-status-bar">
-        <div className="leaderboard-status-bar__item">
-          <span className="leaderboard-status-bar__label">ID:</span>
-          <span className="leaderboard-status-bar__value">{gameId || "..."}</span>
+      {/* Show truncation indicator if displaying subset and not starting from rank 1 */}
+      {displayMode === 'personal' && isShowingSubset && firstDisplayedRank > 1 && (
+        <div className="leaderboard-truncation-indicator">
+          <small className="text-muted text-center d-block py-2">
+            ... {firstDisplayedRank - 1} player{firstDisplayedRank - 1 !== 1 ? 's' : ''} above ...
+          </small>
         </div>
-        <div className="leaderboard-status-bar__item">
-          <span className={`leaderboard-status-bar__dot ${isConnected ? 'leaderboard-status-bar__dot--connected' : 'leaderboard-status-bar__dot--disconnected'}`}></span>
-          <span className="leaderboard-status-bar__value">{isConnected ? 'Live' : 'Offline'}</span>
-        </div>
-        <div className="leaderboard-status-bar__item">
-          <span className="leaderboard-status-bar__value leaderboard-status-bar__value--status">{getStatusDisplayText(gameStatus)}</span>
-        </div>
-      </div>
+      )}
 
       <ListGroup variant="flush">
-        {leaderboard.leaderboard.map((player, index) => {
+        {displayedPlayers.map((player) => {
           const isCurrentPlayer = currentSession?.sessionId === player.sessionId;
-          const rank = index + 1;
+          // Calculate actual rank from full leaderboard
+          const rank = leaderboard.leaderboard.findIndex(p => p.sessionId === player.sessionId) + 1;
           
           return (
             <ListGroup.Item
@@ -112,13 +201,17 @@ export function LeaderboardTable({
                 {/* Professional Information */}
                 <div className="leaderboard-item__player">
                   <span className="player-nickname">
+                    {/* Medal icons for top 3 players */}
+                    {rank === 1 && <span className="medal-icon">🥇</span>}
+                    {rank === 2 && <span className="medal-icon">🥈</span>}
+                    {rank === 3 && <span className="medal-icon">🥉</span>}
                     {player.nickname}
                     {isCurrentPlayer && (
                       <Badge bg="primary" className="ms-2">You</Badge>
                     )}
                   </span>
                   
-                  {showDetails && (
+                  {showDetails && showTrackItems && (
                     <div className="player-details">
                       <small className="text-muted">
                         {player.wordsMarked}/{player.totalWords} terms tracked
@@ -156,11 +249,22 @@ export function LeaderboardTable({
           );
         })}
       </ListGroup>
+
+      {/* Show truncation indicator if there are more players below */}
+      {displayMode === 'personal' && isShowingSubset && (firstDisplayedRank + displayedPlayers.length - 1) < totalPlayers && (
+        <div className="leaderboard-truncation-indicator">
+          <small className="text-muted text-center d-block py-2">
+            ... {totalPlayers - (firstDisplayedRank + displayedPlayers.length - 1)} more player{totalPlayers - (firstDisplayedRank + displayedPlayers.length - 1) !== 1 ? 's' : ''} below ...
+          </small>
+        </div>
+      )}
       
       {/* Simplified Analytics Summary */}
       <div className="leaderboard-footer-simple">
         <small>
-          📊 {leaderboard.totalPlayers} active participant{leaderboard.totalPlayers !== 1 ? 's' : ''} in assessment
+          📊 {leaderboard.totalPlayers} participant{leaderboard.totalPlayers !== 1 ? 's' : ''} in assessment
+          {displayMode === 'status' && isShowingSubset && ` (Showing Top ${displayedPlayers.length})`}
+          {displayMode === 'personal' && isShowingSubset && ` (showing ${displayedPlayers.length})`}
         </small>
       </div>
     </div>

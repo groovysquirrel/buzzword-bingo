@@ -3,7 +3,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { ScanCommand, BatchWriteCommand, PutCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { APIGatewayProxyEvent } from "aws-lambda";
 import { handler } from "../lib/handler";
-import { createDefaultGame } from "../lib/gameUtils";
+import { createDefaultGame, generateBuzzwordGameId } from "../lib/gameUtils";
 import { addEvent } from "../lib/gameEvents";
 
 const dynamoDb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
@@ -115,9 +115,8 @@ async function systemPurge(event: APIGatewayProxyEvent) {
   console.log("🎮 Initializing system with new game...");
   
   try {
-    // Generate new game ID with timestamp
-    const timestamp = Date.now();
-    const newGameId = `game-${timestamp}`;
+    // Create a fresh new game with a buzzword ID
+    const newGameId = generateBuzzwordGameId();
 
     // Create new game in "started" state (ready for testing)
     const newGameConfig = {

@@ -1,22 +1,46 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../lib/contextLib";
+import { API } from "aws-amplify";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-import Card from "react-bootstrap/Card";
+
 import Button from "react-bootstrap/Button";
 import Nav from "react-bootstrap/Nav";
 import Tab from "react-bootstrap/Tab";
-import Alert from "react-bootstrap/Alert";
-import BingoTest from "./BingoTest";
-import GameController from "../components/GameController/GameController";
+
+import SystemTester from "../components/SystemTester";
 import "./Admin.css";
+
+interface GameHistoryEntry {
+  gameId: string;
+  startTime: string;
+  endTime: string | null;
+  status: string;
+  winner: {
+    nickname: string;
+    completedAt: string;
+    secretWord: string;
+  } | null;
+  totalWords: number;
+}
+
+interface GameHistoryResponse {
+  totalGames: number;
+  completedGames: number;
+  activeGames: number;
+  timestamp: string;
+  history: GameHistoryEntry[];
+}
 
 export default function Admin() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAppContext();
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("system-tester");
+  const [loading, setLoading] = useState(false);
+  const [gameHistory, setGameHistory] = useState<GameHistoryResponse | null>(null);
+  const [purgeResults, setPurgeResults] = useState<any>(null);
 
   useEffect(() => {
     // Redirect to login if not authenticated
@@ -31,267 +55,431 @@ export default function Admin() {
     return null;
   }
 
+  // Game History functions
+  const getGameHistory = async () => {
+    setLoading(true);
+    try {
+      const result = await API.get("api", "/games/history", {});
+      setGameHistory(result);
+      console.log("Got game history:", result);
+    } catch (error) {
+      console.error("Get game history error:", error);
+      alert("Failed to get game history: " + (error instanceof Error ? error.message : String(error)));
+    }
+    setLoading(false);
+  };
+
+  // System Purge functions
+  const systemPurge = async () => {
+    const confirmMessage = `🚨 DANGER ZONE 🚨
+
+This will permanently DELETE ALL DATA from the system:
+• All player names and sessions
+• All game history
+• All bingo progress
+• All completed bingo records
+• All activity events
+• All bingo cards
+
+This action CANNOT be undone!
+
+Are you absolutely sure you want to proceed?`;
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    // Double confirmation for safety
+    if (!confirm("⚠️ FINAL WARNING: This will delete EVERYTHING. Type 'DELETE' to confirm:") || 
+        prompt("Type 'DELETE' to confirm system purge:") !== "DELETE") {
+      alert("System purge cancelled.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await API.post("api", "/admin/system/purge", {});
+      setPurgeResults(result);
+      
+      console.log("System purge completed:", result);
+      alert(`🚨 SYSTEM PURGED! Deleted ${result.totalItemsDeleted} total records from all tables.`);
+    } catch (error) {
+      console.error("System purge error:", error);
+      alert("Failed to purge system: " + (error instanceof Error ? error.message : String(error)));
+      setPurgeResults({ error: error instanceof Error ? error.message : String(error) });
+    }
+    setLoading(false);
+  };
+
+  // Utility functions
+  const formatDateTime = (isoString: string) => {
+    return new Date(isoString).toLocaleString();
+  };
+
+  const formatDuration = (startTime: string, endTime: string | null) => {
+    if (!endTime) return "Ongoing";
+    
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    const durationMs = end.getTime() - start.getTime();
+    const minutes = Math.floor(durationMs / 60000);
+    const seconds = Math.floor((durationMs % 60000) / 1000);
+    
+    return `${minutes}m ${seconds}s`;
+  };
+
   return (
     <div className="admin-dashboard-container">
       <Container className="py-4">
-        {/* Corporate Header */}
-        <Row className="mb-4">
-          <Col xs={12}>
-            <Card className="admin-dashboard-header border-0 text-center">
-              <Card.Body className="py-4">
-                <div className="mb-3">
-                  <img 
-                    src="/corp-dude.png" 
-                    alt="Corporate Executive" 
-                    height="60" 
-                    className="admin-dashboard-header__logo"
-                  />
+        {/* Clean Header */}
+        <div className="admin-header">
+          <div className="admin-header__content">
+            
+            <h1 className="admin-header__title">Synergistic Enterprise Management Portal</h1>
+            <p className="admin-header__subtitle">
+              Buzzword Bingo administration tools and system management
+            </p>
+          </div>
                 </div>
-                <h1 className="admin-dashboard-header__title">
-                  Executive Administration Portal
-                </h1>
-                <p className="admin-dashboard-header__subtitle">
-                  Enterprise-grade management console for professional assessment platforms
-                </p>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
 
-        {/* Administrative Navigation Interface */}
-        <Row>
-          <Col xs={12}>
-            <Tab.Container activeKey={activeTab} onSelect={(k) => setActiveTab(k || "dashboard")}>
-              <Card className="border-0 shadow-sm" style={{ borderRadius: "12px" }}>
-                <Card.Header className="admin-nav-container border-0 py-3">
-                  <Nav variant="pills" className="admin-nav-pills flex-row">
+        {/* Main Interface */}
+        <Tab.Container activeKey={activeTab} onSelect={(k) => setActiveTab(k || "system-tester")}>
+          <div className="admin-nav-container">
+            <Nav className="admin-nav">
                     <Nav.Item>
                       <Nav.Link 
-                        eventKey="dashboard"
-                        className={activeTab === "dashboard" ? "active" : ""}
+                  eventKey="system-tester"
+                  className={activeTab === "system-tester" ? "active" : ""}
                       >
-                        📊 Executive Dashboard
+                  🔧 System Tester
                       </Nav.Link>
                     </Nav.Item>
                     <Nav.Item>
                       <Nav.Link 
-                        eventKey="game-control"
-                        className={activeTab === "game-control" ? "active" : ""}
+                  eventKey="system-purge"
+                  className={activeTab === "system-purge" ? "active" : ""}
                       >
-                        🎯 Session Management
+                  🚨 System Purge
                       </Nav.Link>
                     </Nav.Item>
                     <Nav.Item>
                       <Nav.Link 
-                        eventKey="testing"
-                        className={activeTab === "testing" ? "active" : ""}
+                  eventKey="game-history"
+                  className={activeTab === "game-history" ? "active" : ""}
                       >
-                        🔧 Quality Assurance
+                  📚 Game History
                       </Nav.Link>
                     </Nav.Item>
                     <Nav.Item>
                       <Nav.Link 
-                        eventKey="monitoring"
-                        className={activeTab === "monitoring" ? "active" : ""}
+                  eventKey="word-manager"
+                  className={activeTab === "word-manager" ? "active" : ""}
                       >
-                        📈 Performance Analytics
+                  📝 Word Manager
                       </Nav.Link>
                     </Nav.Item>
                   </Nav>
-                </Card.Header>
+          </div>
 
-                <Card.Body className="admin-content-section p-0">
+          <div className="admin-content">
                   <Tab.Content>
-                    {/* Executive Dashboard Tab */}
-                    <Tab.Pane eventKey="dashboard">
-                      <div className="p-4">
-                        <Row className="g-4">
-                          {/* Strategic Overview */}
-                          <Col xs={12}>
-                            <h5 className="admin-section-title">
-                              Strategic Operations Overview
-                            </h5>
-                            <Row className="g-3">
-                              <Col xs={12} sm={6} md={3}>
-                                <Card className="admin-overview-card text-center">
-                                  <Card.Body>
-                                    <div className="admin-overview-card__icon">🎯</div>
-                                    <h6 className="admin-overview-card__title">Session Control</h6>
-                                    <small className="admin-overview-card__description">
-                                      Real-time assessment orchestration
-                                    </small>
-                                  </Card.Body>
-                                </Card>
-                              </Col>
-                              <Col xs={12} sm={6} md={3}>
-                                <Card className="admin-overview-card text-center">
-                                  <Card.Body>
-                                    <div className="admin-overview-card__icon">🔬</div>
-                                    <h6 className="admin-overview-card__title">QA Testing</h6>
-                                    <small className="admin-overview-card__description">
-                                      Enterprise validation protocols
-                                    </small>
-                                  </Card.Body>
-                                </Card>
-                              </Col>
-                              <Col xs={12} sm={6} md={3}>
-                                <Card className="admin-overview-card text-center">
-                                  <Card.Body>
-                                    <div className="admin-overview-card__icon">📊</div>
-                                    <h6 className="admin-overview-card__title">Status Board</h6>
-                                    <small className="admin-overview-card__description">
-                                      Executive visualization dashboard
-                                    </small>
-                                  </Card.Body>
-                                </Card>
-                              </Col>
-                              <Col xs={12} sm={6} md={3}>
-                                <Card className="admin-overview-card text-center">
-                                  <Card.Body>
-                                    <div className="admin-overview-card__icon">👔</div>
-                                    <h6 className="admin-overview-card__title">Participants</h6>
-                                    <small className="admin-overview-card__description">
-                                      Professional engagement metrics
-                                    </small>
-                                  </Card.Body>
-                                </Card>
-                              </Col>
-                            </Row>
-                          </Col>
+              {/* System Tester Tab */}
+              <Tab.Pane eventKey="system-tester">
+                <div className="admin-content__body">
+                  <h2 className="admin-section-title">System Testing Interface</h2>
+                  <p className="admin-section-subtitle">
+                    Comprehensive testing tools for API connectivity, player management, and real-time features
+                  </p>
+                  <SystemTester />
+                </div>
+              </Tab.Pane>
 
-                          {/* Strategic Actions */}
-                          <Col xs={12}>
-                            <h5 className="admin-section-title">
-                              Executive Quick Actions
-                            </h5>
-                            <Row className="g-3">
-                              <Col xs={12} md={6}>
+              {/* System Purge Tab */}
+              <Tab.Pane eventKey="system-purge">
+                <div className="admin-content__body">
+                  <h2 className="admin-section-title">System Purge</h2>
+                  <p className="admin-section-subtitle">
+                    Dangerous operations that permanently delete all system data
+                  </p>
+
+                  <div className="admin-alert admin-alert-danger">
+                    <div className="admin-alert__title">⚠️ DANGER ZONE</div>
+                    <p className="mb-2">
+                      System purge will permanently delete ALL data from ALL database tables. 
+                      This includes player sessions, game history, bingo progress, activity events, 
+                      and all related records.
+                    </p>
+                    <p className="mb-0">
+                      <strong>This action cannot be undone!</strong> Use only for complete system reset 
+                      or during development/testing phases.
+                    </p>
+                  </div>
+
+                  <Row>
+                    <Col md={8}>
+                      <div className="admin-card">
+                        <div className="admin-card__body">
+                          <h3 className="admin-card__title">System Data Purge</h3>
+                          <p className="admin-card__description">
+                            This operation will delete all data from the following tables:
+                          </p>
+                          <ul className="mb-4" style={{ color: '#64748b' }}>
+                            <li>Player sessions and authentication tokens</li>
+                            <li>Game state and bingo card data</li>
+                            <li>Leaderboard and progress tracking</li>
+                            <li>Activity events and notifications</li>
+                            <li>Game history and completion records</li>
+                          </ul>
                                 <Button 
-                                  className="admin-action-btn w-100"
+                            onClick={systemPurge} 
+                            disabled={loading}
+                            className="admin-btn admin-btn-danger w-100"
                                   size="lg"
-                                  onClick={() => window.open("/status", "_blank")}
                                 >
-                                  📺 Launch Executive Status Board
+                            {loading ? "🔄 Purging System..." : "🚨 PURGE ALL SYSTEM DATA"}
                                 </Button>
+                        </div>
+                      </div>
                               </Col>
-                              <Col xs={12} md={6}>
-                                <Button 
-                                  className="admin-action-btn w-100"
-                                  size="lg"
-                                  onClick={() => window.open("/", "_blank")}
-                                >
-                                  🎯 Access Professional Assessment Portal
-                                </Button>
-                              </Col>
-                            </Row>
+                    <Col md={4}>
+                      <div className="admin-card">
+                        <div className="admin-card__body">
+                          <h3 className="admin-card__title">📊 Quick Links</h3>
+                          <div className="admin-quick-links">
+                            <a 
+                              href="/status" 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="admin-quick-link"
+                            >
+                              <span className="admin-quick-link__icon">📺</span>
+                              Status Board
+                            </a>
+                            <a 
+                              href="/leaderboard" 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="admin-quick-link"
+                            >
+                              <span className="admin-quick-link__icon">🏆</span>
+                              Leaderboard
+                            </a>
+                            <a 
+                              href="/" 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="admin-quick-link"
+                            >
+                              <span className="admin-quick-link__icon">🎯</span>
+                              Game Portal
+                            </a>
+                          </div>
+                        </div>
+                      </div>
                           </Col>
                         </Row>
+
+                  {/* Purge Results */}
+                  {purgeResults && (
+                    <div className="admin-card">
+                      <div className="admin-card__body">
+                        <h3 className="admin-card__title">Purge Operation Results</h3>
+                        <div className={`admin-alert ${purgeResults.error ? 'admin-alert-danger' : 'admin-alert-success'}`}>
+                          <pre style={{ fontSize: "0.875rem", margin: 0 }}>
+                            {JSON.stringify(purgeResults, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                       </div>
                     </Tab.Pane>
 
-                    {/* Session Management Tab */}
-                    <Tab.Pane eventKey="game-control">
-                      <div className="p-4">
-                        <Row>
-                          <Col xs={12}>
-                            <h5 className="admin-section-title">
-                              Professional Assessment Session Management
-                            </h5>
-                            <Card className="admin-game-control-card mb-4">
-                              <Card.Body className="text-center">
-                                <h6 className="admin-game-control-title">
-                                  Current Session Operations Control
-                                </h6>
-                                <GameController 
-                                  onGameStateChange={(gameId, status) => {
-                                    console.log("Administrative session state change:", gameId, status);
-                                  }}
-                                />
-                                <Alert variant="info" className="mt-3 mb-0">
-                                  <small>
-                                    <strong>Executive Notice:</strong> Session controls impact all connected professionals in real-time.
-                                    Utilize quality assurance protocols to validate system functionality before deployment.
-                                  </small>
-                                </Alert>
-                              </Card.Body>
-                            </Card>
-                          </Col>
-                        </Row>
-                      </div>
-                    </Tab.Pane>
+              {/* Game History Tab */}
+              <Tab.Pane eventKey="game-history">
+                <div className="admin-content__body">
+                  <div className="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                      <h2 className="admin-section-title mb-2">Game History</h2>
+                      <p className="admin-section-subtitle mb-0">
+                        Historical data and analytics for all completed and active games
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={getGameHistory} 
+                      disabled={loading}
+                      className="admin-btn admin-btn-primary"
+                    >
+                      {loading ? "Loading..." : "🔄 Refresh"}
+                    </Button>
+                  </div>
 
-                    {/* Quality Assurance Tab */}
-                    <Tab.Pane eventKey="testing">
-                      <div className="p-4">
-                        <Alert className="admin-testing-alert mb-4">
-                          <Alert.Heading className="h6">🔧 Quality Assurance Environment</Alert.Heading>
-                          <p className="mb-0">
-                            Enterprise-grade testing protocols for multi-stakeholder validation.
-                            Deploy comprehensive assessment simulations to ensure optimal performance during professional engagements.
+                  {gameHistory && (
+                    <Row className="mb-4">
+                      <Col sm={4}>
+                        <div className="admin-stat-card">
+                          <div className="admin-stat-card__icon">📊</div>
+                          <div className="admin-stat-card__title">Total Games</div>
+                          <div className="admin-stat-card__value">{gameHistory.totalGames}</div>
+                        </div>
+                      </Col>
+                      <Col sm={4}>
+                        <div className="admin-stat-card">
+                          <div className="admin-stat-card__icon">✅</div>
+                          <div className="admin-stat-card__title">Completed</div>
+                          <div className="admin-stat-card__value">{gameHistory.completedGames}</div>
+                        </div>
+                      </Col>
+                      <Col sm={4}>
+                        <div className="admin-stat-card">
+                          <div className="admin-stat-card__icon">🎮</div>
+                          <div className="admin-stat-card__title">Active</div>
+                          <div className="admin-stat-card__value">{gameHistory.activeGames}</div>
+                        </div>
+                      </Col>
+                    </Row>
+                  )}
+
+                  {gameHistory?.history && gameHistory.history.length > 0 ? (
+                    <div className="admin-card">
+                      <div className="admin-card__body">
+                        <h3 className="admin-card__title">Game Records</h3>
+                        <div className="table-responsive">
+                          <table className="admin-table">
+                            <thead>
+                              <tr>
+                                <th>Game ID</th>
+                                <th>Status</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
+                                <th>Duration</th>
+                                <th>Winner</th>
+                                <th>Secret Word</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {gameHistory.history.map((game) => (
+                                <tr key={game.gameId}>
+                                  <td>
+                                    <code style={{ fontSize: '0.75rem' }}>{game.gameId}</code>
+                                  </td>
+                                  <td>
+                                    <span className={`badge ${game.status === 'completed' ? 'bg-success' : 'bg-warning'}`}>
+                                      {game.status.toUpperCase()}
+                                    </span>
+                                  </td>
+                                  <td style={{ fontSize: '0.8rem' }}>
+                                    {formatDateTime(game.startTime)}
+                                  </td>
+                                  <td style={{ fontSize: '0.8rem' }}>
+                                    {game.endTime ? formatDateTime(game.endTime) : "—"}
+                                  </td>
+                                  <td style={{ fontSize: '0.8rem' }}>
+                                    {formatDuration(game.startTime, game.endTime)}
+                                  </td>
+                                  <td>
+                                    {game.winner ? (
+                                      <strong>{game.winner.nickname}</strong>
+                                    ) : (
+                                      <span style={{ color: '#9ca3af' }}>No winner</span>
+                                    )}
+                                  </td>
+                                  <td>
+                                    <span className="badge bg-secondary">
+                                      {game.winner ? game.winner.secretWord : "—"}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        {gameHistory && (
+                          <p style={{ color: '#9ca3af', margin: '1rem 0 0 0', fontSize: '0.875rem' }}>
+                            Last updated: {new Date(gameHistory.timestamp).toLocaleTimeString()}
                           </p>
-                        </Alert>
-                        <BingoTest />
+                        )}
+                      </div>
+                    </div>
+                  ) : gameHistory ? (
+                    <div className="admin-alert admin-alert-info">
+                      <div className="admin-alert__title">No game history found</div>
+                      <p className="mb-0">No games have been played yet. Start testing the system to generate history data.</p>
+                    </div>
+                  ) : (
+                    <div className="admin-alert admin-alert-info">
+                      <div className="admin-alert__title">Game History</div>
+                      <p className="mb-0">Click "Refresh" to load game analytics and historical data.</p>
+                    </div>
+                  )}
                       </div>
                     </Tab.Pane>
 
-                    {/* Performance Analytics Tab */}
-                    <Tab.Pane eventKey="monitoring">
-                      <div className="p-4">
-                        <h5 className="admin-section-title">
-                          Enterprise Performance Analytics
-                        </h5>
-                        <Alert variant="info" className="mb-4">
-                          <Alert.Heading className="h6">📈 Advanced Analytics Suite</Alert.Heading>
-                          <p className="mb-0">
-                            Comprehensive real-time analytics, stakeholder engagement metrics, and enterprise system health monitoring 
-                            will be deployed in the next strategic implementation phase.
-                          </p>
-                        </Alert>
+              {/* Word Manager Tab */}
+              <Tab.Pane eventKey="word-manager">
+                <div className="admin-content__body">
+                  <h2 className="admin-section-title">Word Manager</h2>
+                  <p className="admin-section-subtitle">
+                    Manage buzzwords, categories, and game content for bingo card generation
+                  </p>
+
+                  <div className="admin-alert admin-alert-info">
+                    <div className="admin-alert__title">🚧 Coming Soon</div>
+                    <p className="mb-2">
+                      The Game Word Manager interface is under development. This will provide tools for:
+                    </p>
+                    <ul className="mb-0">
+                      <li>Managing buzzword dictionary and categories</li>
+                      <li>Adding/removing words from the game pool</li>
+                      <li>Configuring word weights and rarity</li>
+                      <li>Setting up themed word collections</li>
+                      <li>Import/export word lists</li>
+                    </ul>
+                  </div>
                         
                         <Row className="g-3">
-                          <Col xs={12} md={6}>
-                            <Card className="admin-monitoring-card">
-                              <Card.Body>
-                                <h6 className="admin-monitoring-card__title">🔗 Strategic Interfaces</h6>
-                                <div className="d-grid gap-2">
-                                  <Button 
-                                    variant="outline-primary"
-                                    size="sm"
-                                    onClick={() => window.open("/status", "_blank")}
-                                  >
-                                    Executive Status Dashboard
-                                  </Button>
-                                  <Button 
-                                    variant="outline-secondary"
-                                    size="sm"
-                                    onClick={() => window.open("/leaderboard", "_blank")}
-                                  >
-                                    Professional Performance Metrics
-                                  </Button>
+                    <Col md={6}>
+                      <div className="admin-stat-card">
+                        <div className="admin-stat-card__icon">📚</div>
+                        <div className="admin-stat-card__title">Word Dictionary</div>
+                        <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 0 0' }}>
+                          Manage the complete collection of buzzwords
+                        </p>
+                      </div>
+                    </Col>
+                    <Col md={6}>
+                      <div className="admin-stat-card">
+                        <div className="admin-stat-card__icon">🏷️</div>
+                        <div className="admin-stat-card__title">Categories</div>
+                        <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 0 0' }}>
+                          Organize words by theme and difficulty
+                        </p>
+                      </div>
+                    </Col>
+                    <Col md={6}>
+                      <div className="admin-stat-card">
+                        <div className="admin-stat-card__icon">⚖️</div>
+                        <div className="admin-stat-card__title">Word Weights</div>
+                        <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 0 0' }}>
+                          Configure rarity and selection probability
+                        </p>
                                 </div>
-                              </Card.Body>
-                            </Card>
                           </Col>
-                          <Col xs={12} md={6}>
-                            <Card className="admin-monitoring-card">
-                              <Card.Body>
-                                <h6 className="admin-monitoring-card__title">⚡ System Health Status</h6>
-                                <small className="admin-status-indicator">Backend APIs: ✅ Operational</small>
-                                <small className="admin-status-indicator">WebSocket Infrastructure: ✅ Connected</small>
-                                <small className="admin-status-indicator">Database Operations: ✅ Accessible</small>
-                                <small className="admin-status-indicator">Last Health Check: Just now</small>
-                              </Card.Body>
-                            </Card>
+                    <Col md={6}>
+                      <div className="admin-stat-card">
+                        <div className="admin-stat-card__icon">📊</div>
+                        <div className="admin-stat-card__title">Analytics</div>
+                        <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 0 0' }}>
+                          Track word usage and game balance
+                        </p>
+                      </div>
                           </Col>
                         </Row>
                       </div>
                     </Tab.Pane>
                   </Tab.Content>
-                </Card.Body>
-              </Card>
+          </div>
             </Tab.Container>
-          </Col>
-        </Row>
       </Container>
     </div>
   );

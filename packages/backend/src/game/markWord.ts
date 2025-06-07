@@ -6,6 +6,7 @@ import { handler } from "../lib/handler";
 import { BingoProgress } from "../lib/types";
 import { extractSessionFromHeaders } from "../auth/token";
 import { addEvent } from "../lib/gameEvents";
+import { getCurrentNickname } from "../lib/userValidation";
 
 const dynamoDb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
@@ -17,6 +18,9 @@ async function markWord(event: APIGatewayProxyEvent) {
   }
 
   console.log(`🎯 markWord: Session ${session.sessionId} (${session.nickname}) marking word`);
+
+  // Get current nickname from database (in case it was updated)
+  const currentNickname = await getCurrentNickname(session.sessionId, session.nickname);
 
   // SIMPLE FIX: Ensure player record exists (handles missing player records)
   try {
@@ -32,14 +36,14 @@ async function markWord(event: APIGatewayProxyEvent) {
         TableName: Resource.Players.name,
         Item: {
           sessionId: session.sessionId,
-          nickname: session.nickname,
+          nickname: currentNickname,
           joinedAt: new Date().toISOString(),
         },
         ConditionExpression: "attribute_not_exists(sessionId)"
       }));
-      console.log(`✅ Created player record for ${session.nickname} (${session.sessionId})`);
+      console.log(`✅ Created player record for ${currentNickname} (${session.sessionId})`);
     } else {
-      console.log(`✅ Player record exists for ${session.nickname} (${session.sessionId})`);
+      console.log(`✅ Player record exists for ${currentNickname} (${session.sessionId})`);
     }
   } catch (createError) {
     console.log(`⚠️ Could not verify/create player record: ${createError instanceof Error ? createError.message : String(createError)}`);
@@ -100,9 +104,9 @@ async function markWord(event: APIGatewayProxyEvent) {
 
   console.log(`Successfully marked word "${word}" for session ${session.sessionId} in game ${gameId}`);
 
-  // Publish word marked event for real-time updates
+  // Publish word marked event for real-time updates - use current nickname from database
   await addEvent("word_marked", {
-    nickname: session.nickname,
+    nickname: currentNickname, // Use fresh nickname from database
     word: progress.word,
     gameId,
     sessionId: session.sessionId,

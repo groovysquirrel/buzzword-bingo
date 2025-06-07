@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import Home from "./containers/Home.tsx";
 import Login from "./containers/Login.tsx";
 import Settings from "./containers/Settings.tsx";
+import Resources from "./containers/Resources.tsx";
 import NotFound from "./containers/NotFound.tsx";
 import Admin from "./containers/Admin.tsx";
 import StatusScreen from "./containers/StatusScreen.tsx";
@@ -18,6 +19,10 @@ export default function Links() {
       <Route path="/" element={<Join />} />
       <Route path="/play" element={<BingoGame />} />
       <Route path="/leaderboard" element={<Leaderboard />} />
+      <Route path="/settings" element={<Settings />} />
+      
+      {/* Resources page for developers */}
+      <Route path="/resources" element={<Resources />} />
       
       {/* Status board for public displays */}
       <Route path="/status" element={<StatusScreen />} />
@@ -41,14 +46,6 @@ export default function Links() {
           <UnauthenticatedRoute>
             <Login />
           </UnauthenticatedRoute>
-        }
-      />
-      <Route
-        path="/settings"
-        element={
-          <AuthenticatedRoute>
-            <Settings />
-          </AuthenticatedRoute>
         }
       />
      

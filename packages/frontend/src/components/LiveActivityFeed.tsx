@@ -9,6 +9,7 @@ import {
   getEventColor, 
   formatTime 
 } from '../utils/eventFormatter';
+import './LiveActivityFeed.css';
 
 type UnifiedEvent = GameEvent | ActivityEvent;
 
@@ -18,19 +19,18 @@ interface LiveActivityFeedProps {
 }
 
 /**
- * Corporate Assessment Platform Live Activity Feed
+ * Live Activity Feed Component
  * 
- * Real-time monitoring component for executive dashboard displays.
- * Provides professional formatting of assessment activities and system events.
+ * Professional real-time activity monitoring for corporate dashboards.
  */
 export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
   events,
   className = "activity-feed"
 }) => {
-  // Deduplicate events based on ID and timestamp
+  // Deduplicate events based on ID and timestamp, limit to 100 items
   const deduplicatedEvents = React.useMemo(() => {
     const seen = new Set<string>();
-    return events.filter((event) => {
+    const filtered = events.filter((event) => {
       const normalized = normalizeEvent(event);
       const key = `${normalized.id}-${normalized.timestamp}`;
       if (seen.has(key)) {
@@ -39,48 +39,70 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
       seen.add(key);
       return true;
     });
+    
+    // Limit to 100 most recent items
+    return filtered.slice(0, 100);
   }, [events]);
-
-  if (deduplicatedEvents.length === 0) {
-    return (
-      <div className="activity-empty">
-        <span className="activity-empty__icon">📋</span>
-        <h6 className="activity-empty__title">Monitoring System Active</h6>
-        <small className="activity-empty__subtitle">Real-time events will appear as corporate activities occur</small>
-      </div>
-    );
-  }
 
   return (
     <div className={className}>
-      <ListGroup variant="flush">
-        {deduplicatedEvents.map((event, index) => {
-          const normalized = normalizeEvent(event);
-          return (
-            <ListGroup.Item 
-              key={`${normalized.id}-${normalized.timestamp}`}
-              className={`activity-item ${index % 2 === 0 ? 'activity-item--even' : ''}`}
-            >
-              <div className="d-flex align-items-start gap-3">
-                <div 
-                  className="activity-item__icon"
-                  style={{ color: getEventColor(normalized.type) }}
+      {/* Status Indicator */}
+      <div className="activity-status-bar">
+        <span className="activity-status-text">
+          Monitoring activity...
+          <span className="activity-dots">
+            <span>.</span>
+            <span>.</span>
+            <span>.</span>
+          </span>
+        </span>
+        <span className="activity-count">
+          {deduplicatedEvents.length} events
+        </span>
+      </div>
+
+      {/* Activity Feed Content */}
+      <div className="activity-feed-content">
+        {deduplicatedEvents.length === 0 ? (
+          <div className="activity-empty-state">
+            <div className="activity-empty-state__content">
+              <span className="activity-empty-state__icon">📊</span>
+              <span className="activity-empty-state__text">
+                Real-time events will appear here
+              </span>
+            </div>
+          </div>
+        ) : (
+          <ListGroup variant="flush" className="activity-list">
+            {deduplicatedEvents.map((event, index) => {
+              const normalized = normalizeEvent(event);
+              return (
+                <ListGroup.Item 
+                  key={`${normalized.id}-${normalized.timestamp}`}
+                  className={`activity-item ${index % 2 === 0 ? 'activity-item--even' : ''}`}
                 >
-                  {getEventIcon(normalized.type)}
-                </div>
-                <div className="activity-item__content">
-                  <div className="activity-item__message">
-                    {formatEventMessage(event)}
+                  <div className="d-flex align-items-start gap-3">
+                    <div 
+                      className="activity-item__icon"
+                      style={{ color: getEventColor(normalized.type) }}
+                    >
+                      {getEventIcon(normalized.type)}
+                    </div>
+                    <div className="activity-item__content">
+                      <div className="activity-item__message">
+                        {formatEventMessage(event)}
+                      </div>
+                      <small className="activity-item__time">
+                        {formatTime(normalized.timestamp)}
+                      </small>
+                    </div>
                   </div>
-                  <small className="activity-item__time">
-                    {formatTime(normalized.timestamp)}
-                  </small>
-                </div>
-              </div>
-            </ListGroup.Item>
-          );
-        })}
-      </ListGroup>
+                </ListGroup.Item>
+              );
+            })}
+          </ListGroup>
+        )}
+      </div>
     </div>
   );
 };

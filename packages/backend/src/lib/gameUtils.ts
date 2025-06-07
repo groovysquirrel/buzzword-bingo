@@ -26,6 +26,51 @@ export const MASTER_BUZZWORDS = [
 ];
 
 /**
+ * Buzzwords that are 6 characters or less - perfect for GameIDs!
+ * These will create hilariously corporate GameIDs like "AI-X3K" or "Pivot-9Z2"
+ */
+export const GAMEID_BUZZWORDS = [
+  // Tech (≤6 chars)
+  "AI", "IoT", "Cloud", "DevOps", "GitOps", "API", "CDN",
+  
+  // Business (≤6 chars) 
+  "Synergy", "ROI", "KPI", "OKR", "Vision", "Pivot", "Growth",
+  
+  // Strategy (≤6 chars)
+  "North", "Scale", "Agile", "Lean", "Sprint", "Scrum",
+  
+  // Process (≤6 chars)
+  "Flow", "Stack", "Code", "Auto", "Smart", "Core", "End2E",
+  
+  // Corporate Favorites (≤6 chars)
+  "Buzz", "Hack", "Shift", "Loop", "Sync", "Edge", "Deep",
+  "Touch", "Circle", "Tiger", "War", "Lab", "360", "Low", "No"
+];
+
+/**
+ * Generate a 3-character alphanumeric code (like X3K, 9Z2, etc.)
+ */
+function generateAlphanumericCode(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let result = "";
+  for (let i = 0; i < 3; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+/**
+ * Generate a hilarious buzzword-based GameID
+ * Format: {buzzword}-{3-char alphanumeric}
+ * Examples: "AI-X3K", "Pivot-9Z2", "Synergy-B7M"
+ */
+export function generateBuzzwordGameId(): string {
+  const randomBuzzword = GAMEID_BUZZWORDS[Math.floor(Math.random() * GAMEID_BUZZWORDS.length)];
+  const alphanumericCode = generateAlphanumericCode();
+  return `${randomBuzzword}-${alphanumericCode}`;
+}
+
+/**
  * Generate a random 5x5 bingo card from the master word list
  */
 export function generateBingoCard(): string[][] {
@@ -103,16 +148,10 @@ export function calculateProgress(markedWords: Set<string>): number {
 }
 
 /**
- * Get current active game ID (synchronous fallback)
- */
-export function getCurrentGameId(): string {
-  return "game-001"; // Hardcoded fallback for sync operations
-}
-
-/**
  * Get current active game ID from database
+ * Returns null if no active games are found
  */
-export async function getCurrentActiveGameId(): Promise<string> {
+export async function getCurrentActiveGameId(): Promise<string | null> {
   const { Resource } = await import("sst");
   const { DynamoDBClient } = await import("@aws-sdk/client-dynamodb");
   const { ScanCommand, DynamoDBDocumentClient } = await import("@aws-sdk/lib-dynamodb");
@@ -138,8 +177,8 @@ export async function getCurrentActiveGameId(): Promise<string> {
     const activeGames = result.Items || [];
 
     if (activeGames.length === 0) {
-      // No active games found, return fallback
-      return "game-001";
+      // No active games found
+      return null;
     }
 
     // If multiple active games, return the most recent one
@@ -150,13 +189,13 @@ export async function getCurrentActiveGameId(): Promise<string> {
     return currentGame.gameId;
   } catch (error) {
     console.error("Error getting current active game ID:", error);
-    // Return fallback on error
-    return "game-001";
+    throw new Error("Failed to get current active game ID");
   }
 }
 
 /**
  * Create a default game configuration
+ * Note: gameId should be set by the caller using generateBuzzwordGameId()
  */
 export function createDefaultGame(): {
   gameId: string;
@@ -168,7 +207,7 @@ export function createDefaultGame(): {
   stateHistory: Array<{from: string; to: string; timestamp: string; reason?: string}>;
 } {
   return {
-    gameId: getCurrentGameId(), // Use sync version for now
+    gameId: "", // Will be set by caller
     status: "open", // Start games in "open" state by default
     wordList: MASTER_BUZZWORDS,
     startTime: new Date().toISOString(),

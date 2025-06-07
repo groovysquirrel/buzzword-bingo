@@ -3,7 +3,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { ScanCommand, BatchWriteCommand, PutCommand, UpdateCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { APIGatewayProxyEvent } from "aws-lambda";
 import { handler } from "../lib/handler";
-import { createDefaultGame } from "../lib/gameUtils";
+import { createDefaultGame, generateBuzzwordGameId } from "../lib/gameUtils";
 import { addEvent } from "../lib/gameEvents";
 
 const dynamoDb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
@@ -50,9 +50,8 @@ async function newGame(event: APIGatewayProxyEvent) {
     }));
   }
 
-  // Generate new game ID with timestamp
-  const timestamp = Date.now();
-  const newGameId = `game-${timestamp}`;
+  // Generate new buzzword-based game ID (much more corporate!)
+  const newGameId = generateBuzzwordGameId();
 
   // Create new game record
   const newGameConfig = {

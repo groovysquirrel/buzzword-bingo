@@ -120,6 +120,14 @@ api.route("POST /bingo/{gameId}/call", callBingoFunction.arn);
 // Get detailed game status (consolidated function)
 api.route("GET /game/{gameId}/status", "packages/backend/src/game/getGameStatus.main");
 
+// Update player profile (nickname)
+const updateProfileFunction = new sst.aws.Function("UpdateProfileFunction", {
+  handler: "packages/backend/src/game/updateProfile.main",
+  link: [tables.players, tables.games, tables.bingoProgress, tables.completedBingo, tables.events, tables.bingoCards, gameWebSocket],
+  environment: { WEBSOCKET_API_ENDPOINT: webSocketApiUrl }
+});
+api.route("POST /profile/update", updateProfileFunction.arn);
+
 // =============================================================================
 // ADMIN ENDPOINTS (Game management and administration)
 // =============================================================================
