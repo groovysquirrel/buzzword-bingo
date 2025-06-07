@@ -1,5 +1,4 @@
 import { Route, Routes } from "react-router-dom";
-import Home from "./containers/Home.tsx";
 import Login from "./containers/Login.tsx";
 import Settings from "./containers/Settings.tsx";
 import Resources from "./containers/Resources.tsx";
@@ -36,9 +35,6 @@ export default function Links() {
           </AuthenticatedRoute>
         }
       />
-      
-      {/* Legacy home route - redirect to main Join page */}
-      <Route path="/home" element={<Home />} />
       
       <Route
         path="/login"

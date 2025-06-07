@@ -14,13 +14,6 @@ people bingo - I saw with my little eye...
 
 
 
-TO DO:
-
-buzzwork manager
-
-Clean, document, refactor
-
-Finish resources
 
 
 

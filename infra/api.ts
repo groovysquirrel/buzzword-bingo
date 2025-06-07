@@ -69,7 +69,11 @@ export const api = new sst.aws.ApiGatewayV2("Api", {
     }
   },
   domain: {
-    name: $app.stage === "prod" ? "api.buzzwordbingo.live" : "dev.api.buzzwordbingo.live",
+    name: $app.stage === "prod" 
+      ? "api.buzzwordbingo.live" 
+      : $app.stage.startsWith("version")
+      ? `v${$app.stage.slice(7)}.api.buzzwordbingo.live`
+      : "dev.api.buzzwordbingo.live",
   }
 });
 

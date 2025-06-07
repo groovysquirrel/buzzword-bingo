@@ -11,8 +11,10 @@ export const frontend = new sst.aws.StaticSite("Frontend", {
     command: "npm run build",
   },
   domain: $app.stage === "prod"
-  ? { name: "buzzwordbingo.live", aliases: ["www.buzzwordbingo.live"] }
-  : { name: "dev.buzzwordbingo.live" },
+    ? { name: "buzzwordbingo.live", aliases: ["www.buzzwordbingo.live"] }
+    : $app.stage.startsWith("version")
+    ? { name: `v${$app.stage.slice(7)}.buzzwordbingo.live` }
+    : { name: "dev.buzzwordbingo.live" },
   environment: {
     VITE_REGION: region,
     VITE_API_URL: api.url,

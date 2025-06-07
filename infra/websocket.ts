@@ -21,7 +21,11 @@ import { tables } from "./storage";
  */
 export const gameWebSocket = new sst.aws.ApiGatewayWebSocket("GameWebSocket", {
   domain: {
-    name: $app.stage === "prod" ? "ws.buzzwordbingo.live" : "ws-dev.buzzwordbingo.live",
+    name: $app.stage === "prod" 
+      ? "ws.buzzwordbingo.live" 
+      : $app.stage.startsWith("version")
+      ? `v${$app.stage.slice(7)}.ws.buzzwordbingo.live`
+      : "ws-dev.buzzwordbingo.live",
   }
 });
 
