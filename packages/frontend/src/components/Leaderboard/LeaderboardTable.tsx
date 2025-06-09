@@ -17,7 +17,7 @@ interface ExtendedLeaderboardProps extends LeaderboardProps {
 const getStatusDisplayText = (status: string): string => {
   switch (status) {
     case "open": return "OPEN";
-    case "started": return "ACTIVE";
+    case "playing": return "ACTIVE";
     case "paused": return "PAUSED";
     case "bingo": return "BINGO PENDING";
     case "ended": return "GAME COMPLETE";

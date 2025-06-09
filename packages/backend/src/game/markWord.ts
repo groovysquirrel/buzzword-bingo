@@ -63,15 +63,20 @@ async function markWord(event: APIGatewayProxyEvent) {
 
   const game = gameResult.Item;
   if (!game) {
-    console.error(`Game ${gameId} not found when marking word`);
-    throw new Error(`Game ${gameId} not found`);
+    console.log(`Game ${gameId} not found when marking word - returning clear cache instruction`);
+    return JSON.stringify({
+      action: "clear_cache",
+      reason: "game_not_found_during_mark",
+      message: "This game no longer exists. The system may have been reset.",
+      timestamp: new Date().toISOString()
+    });
   }
 
   // Check if game is in a state where words can be marked
-  const validStates = ["open", "started", "paused", "bingo"];
+  const validStates = ["open", "playing", "paused", "bingo"];
   if (!validStates.includes(game.status)) {
     console.error(`Cannot mark words in game ${gameId} with status: ${game.status}`);
-    throw new Error(`Game is in "${game.status}" state. Words can only be marked when game is open, started, paused, or in bingo verification.`);
+    throw new Error(`Game is in "${game.status}" state. Words can only be marked when game is open, playing, paused, or in bingo verification.`);
   }
 
   console.log(`Marking word in game ${gameId} (status: ${game.status}) for session ${session.sessionId}`);

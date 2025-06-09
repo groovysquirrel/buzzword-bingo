@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { API } from 'aws-amplify';
 import { SessionInfo, BingoCard, MarkWordResponse } from '../types/game';
+import { clearAllLocalStorage } from './useGameSession';
 
 /**
  * Custom hook for managing bingo game state
@@ -27,6 +28,11 @@ export function useBingoGame(session: SessionInfo | null) {
     }
   }, [session]);
 
+  // Clear marking state when session changes (safety cleanup)
+  useEffect(() => {
+    setMarkingWord(null);
+  }, [session?.currentGameId]);
+
   // Note: Removed auto-refresh polling since we now have:
   // 1. WebSocket real-time updates for leaderboard changes
   // 2. Local state updates when marking words for immediate feedback
@@ -43,7 +49,7 @@ export function useBingoGame(session: SessionInfo | null) {
     }
     
     try {
-      const result: BingoCard = await API.get(
+      const result: any = await API.get(
         'api', 
         `/bingo/${sessionInfo.currentGameId}`, 
         {
@@ -53,16 +59,38 @@ export function useBingoGame(session: SessionInfo | null) {
         }
       );
       
+      // Check for clear cache instruction
+      if (result.action === 'clear_cache') {
+        console.log('🚨 CLEAR CACHE INSTRUCTION RECEIVED:', result.reason);
+        console.log('🧹 Auto-clearing localStorage due to non-existent game');
+        clearAllLocalStorage();
+        
+        setError('CLEAR_CACHE|' + (result.message || 'Game no longer exists. Please rejoin.'));
+        return;
+      }
+      
       console.log('Loaded bingo card with marked words:', result.markedWords);
       setBingoCard(result);
       setError(null);
     } catch (error: any) {
       console.error('Failed to load bingo card:', error);
       
+      // Handle game not found (potential system reset)
+      if (error.response?.status === 404) {
+        console.warn("Bingo card load failed with 404 - game not found, system may have been reset");
+        
+        // Auto-clear localStorage and trigger redirect since game doesn't exist
+        console.log("🧹 Auto-clearing localStorage due to non-existent game");
+        clearAllLocalStorage();
+        
+        setError('GAME_NOT_FOUND|The game no longer exists. The system may have been reset. Please rejoin the game.');
+        return;
+      }
+      
       // PURGE FIX: Clear invalid sessions
       if (error.response?.status === 401 || error.response?.status === 403) {
         console.warn("Bingo card load failed with auth error - session likely invalid due to purge");
-        setError('Session expired. Please rejoin the game.');
+        setError('SESSION_EXPIRED|Session expired. Please rejoin the game.');
         // Let parent component handle the redirect by not setting a generic error
         return;
       }
@@ -81,7 +109,13 @@ export function useBingoGame(session: SessionInfo | null) {
    * @returns Promise that resolves to the mark response, or null if failed
    */
   const markWord = async (word: string): Promise<MarkWordResponse | null> => {
-    if (!session || !bingoCard || markingWord || bingoCard.markedWords.includes(word)) {
+    if (!session || !bingoCard || markingWord) {
+      return null;
+    }
+
+    // Don't allow marking already marked words
+    if (bingoCard.markedWords.includes(word)) {
+      console.log(`⚠️ Word "${word}" is already marked, ignoring click`);
       return null;
     }
 
@@ -91,7 +125,7 @@ export function useBingoGame(session: SessionInfo | null) {
     setError(null);
 
     try {
-      const result: MarkWordResponse = await API.post(
+      const result: any = await API.post(
         'api', 
         `/bingo/${session.currentGameId}/mark`, 
         {
@@ -102,8 +136,18 @@ export function useBingoGame(session: SessionInfo | null) {
         }
       );
 
+      // Check for clear cache instruction
+      if (result.action === 'clear_cache') {
+        console.log('🚨 CLEAR CACHE INSTRUCTION from mark word:', result.reason);
+        console.log('🧹 Auto-clearing localStorage due to non-existent game during mark');
+        clearAllLocalStorage();
+        
+        setError('CLEAR_CACHE|' + (result.message || 'Game no longer exists. Please rejoin.'));
+        return null;
+      }
+
       console.log(`✅ Mark word API response:`, result);
-      console.log(`📊 Game ID used: ${session.currentGameId}, Response game ID: ${(result as any).gameId}`);
+      console.log(`📊 Game ID used: ${session.currentGameId}, Response game ID: ${result.gameId}`);
 
       // Update the marked words locally for immediate feedback
       setBingoCard(prev => prev ? {
@@ -121,10 +165,22 @@ export function useBingoGame(session: SessionInfo | null) {
         sessionId: session.sessionId
       });
       
+      // Handle game not found (potential system reset)
+      if (error.response?.status === 404) {
+        console.warn("Mark word failed with 404 - game not found, system may have been reset");
+        
+        // Auto-clear localStorage and trigger redirect since game doesn't exist
+        console.log("🧹 Auto-clearing localStorage due to non-existent game (mark word)");
+        clearAllLocalStorage();
+        
+        setError('GAME_NOT_FOUND|The game no longer exists. The system may have been reset. Please rejoin the game.');
+        return null;
+      }
+      
       // PURGE FIX: Handle invalid sessions
       if (error.response?.status === 401 || error.response?.status === 403) {
         console.warn("Mark word failed with auth error - session likely invalid due to purge");
-        setError('Session expired. Please rejoin the game.');
+        setError('SESSION_EXPIRED|Session expired. Please rejoin the game.');
         return null;
       }
       
@@ -169,7 +225,7 @@ export function useBingoGame(session: SessionInfo | null) {
     setError(null);
 
     try {
-      const result = await API.post(
+      const result: any = await API.post(
         'api', 
         `/bingo/${session.currentGameId}/call`, 
         {
@@ -179,6 +235,16 @@ export function useBingoGame(session: SessionInfo | null) {
           body: { bingoType, winningWords }
         }
       );
+
+      // Check for clear cache instruction
+      if (result.action === 'clear_cache') {
+        console.log('🚨 CLEAR CACHE INSTRUCTION from BINGO call:', result.reason);
+        console.log('🧹 Auto-clearing localStorage due to non-existent game during BINGO');
+        clearAllLocalStorage();
+        
+        setError('CLEAR_CACHE|' + (result.message || 'Game no longer exists. Please rejoin.'));
+        return null;
+      }
 
       console.log(`✅ BINGO call response:`, result);
       return result;
@@ -206,6 +272,7 @@ export function useBingoGame(session: SessionInfo | null) {
     callBingo,
     calculateProgress,
     calculatePoints,
-    clearError: () => setError(null)
+    clearError: () => setError(null),
+    clearMarkingWord: () => setMarkingWord(null) // Debug/recovery function
   };
 } 

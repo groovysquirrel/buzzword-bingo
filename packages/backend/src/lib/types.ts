@@ -16,7 +16,7 @@ export interface Player {
 // Game entity
 export interface Game {
   gameId: string;
-  status: "open" | "started" | "paused" | "bingo" | "ended" | "cancelled" | "active" | "scheduled" | "complete"; // Extended to support new states
+  status: "open" | "playing" | "paused" | "bingo" | "ended" | "cancelled" | "active" | "scheduled" | "complete" | "testing"; // Extended to support new states
   wordList: string[];
   startTime: string;
   endTime?: string;
@@ -56,8 +56,12 @@ export interface BingoCard {
 export interface StoredBingoCard {
   sessionId: string;
   gameId: string;
-  cardWords: string; // JSON stringified 5x5 array
+  cardWords: string; // JSON stringified grid array (variable size)
   createdAt: string;
+  gameSettings?: {
+    gridSize: "3x3" | "4x4" | "5x5";
+    selectedCategories: string[];
+  };
 }
 
 // API Response types

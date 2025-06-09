@@ -22,7 +22,7 @@ The Buzzword Bingo application uses a comprehensive state machine to manage game
 | State | Description | Player Actions | Admin Actions |
 |-------|-------------|----------------|---------------|
 | **open** | Players can join the game | Join game, view cards | Start, pause, cancel |
-| **started** | Game is active, players can mark words | Mark words, view leaderboard | Pause, end, cancel |
+| **playing** | Game is active, players can mark words | Mark words, view leaderboard | Pause, end, cancel |
 | **paused** | Game temporarily stopped | View cards only | Resume, cancel |
 | **bingo** | Someone called BINGO, awaiting verification | View cards only | Verify & end, reject, cancel |
 | **ended** | Game completed with winner | View final results | Create new game |
@@ -33,7 +33,7 @@ The Buzzword Bingo application uses a comprehensive state machine to manage game
 ```mermaid
 graph TD
     A[No Game] -->|CREATE| B[open]
-    B -->|START| C[started]
+    B -->|START| C[playing]
     B -->|PAUSE| D[paused]
     B -->|CANCEL| E[cancelled]
     C -->|PAUSE| D

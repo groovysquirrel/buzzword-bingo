@@ -70,13 +70,13 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Function"
     }
-    "UpdateProfileFunction": {
+    "TestUsernameFunction": {
       "name": string
       "type": "sst.aws.Function"
     }
-    "Uploads": {
+    "UpdateProfileFunction": {
       "name": string
-      "type": "sst.aws.Bucket"
+      "type": "sst.aws.Function"
     }
     "UserPool": {
       "id": string
@@ -102,6 +102,10 @@ declare module "sst" {
     "WSMessageHandler": {
       "name": string
       "type": "sst.aws.Function"
+    }
+    "Words": {
+      "name": string
+      "type": "sst.aws.Dynamo"
     }
   }
 }

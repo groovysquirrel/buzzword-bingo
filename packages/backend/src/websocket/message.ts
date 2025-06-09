@@ -119,7 +119,7 @@ async function sendCurrentGameStatus(connectionId: string, gameId: string) {
 function getStateDescription(status: string): string {
   const descriptions: Record<string, string> = {
     open: 'Players can join the game',
-    started: 'Game is active - players can mark words',
+    playing: 'Game is active - players can mark words',
     paused: 'Game is temporarily paused',
     bingo: 'BINGO called - awaiting verification', 
     ended: 'Game completed with winner',

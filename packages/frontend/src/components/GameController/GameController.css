@@ -31,11 +31,12 @@
 }
 
 .status-badge--open { background: #10b981; color: white; }
-.status-badge--started { background: #3b82f6; color: white; }
+.status-badge--playing { background: #3b82f6; color: white; }
 .status-badge--paused { background: #f59e0b; color: white; }
 .status-badge--bingo { background: #8b5cf6; color: white; }
 .status-badge--ended { background: #64748b; color: white; }
 .status-badge--cancelled { background: #ef4444; color: white; }
+.status-badge--no_games { background: #6b7280; color: white; }
 
 /* Timer */
 .timer-display {
@@ -86,6 +87,9 @@
 }
 
 /* Button Colors */
+.action-btn--refresh { background: #6b7280; color: white; }
+.action-btn--refresh:hover:not(:disabled) { background: #4b5563; }
+
 .action-btn--new { background: #3b82f6; color: white; }
 .action-btn--new:hover:not(:disabled) { background: #2563eb; }
 

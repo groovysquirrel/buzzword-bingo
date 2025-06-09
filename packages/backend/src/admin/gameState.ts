@@ -14,17 +14,17 @@ import { addEvent } from "../lib/gameEvents";
  * 
  * Game States:
  * - open: Players can join the game
- * - started: Game is active, players can mark words
+ * - playing: Game is active, players can mark words
  * - paused: Game is temporarily stopped, no actions allowed
  * - bingo: Someone has called bingo, awaiting verification
  * - ended: Game completed with a winner
  * - cancelled: Game terminated without completion
  * 
  * Valid State Transitions:
- * - open → started, paused, cancelled
- * - started → paused, bingo, ended, cancelled  
- * - paused → started, cancelled
- * - bingo → ended, started (if false bingo), cancelled
+ * - open → playing, paused, cancelled
+ * - playing → paused, bingo, ended, cancelled  
+ * - paused → playing, cancelled
+ * - bingo → ended, playing (if false bingo), cancelled
  * - ended → (terminal state)
  * - cancelled → (terminal state)
  */
@@ -34,7 +34,7 @@ const dynamoDb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 /**
  * Valid game states that the system supports
  */
-const VALID_STATES = ['open', 'started', 'paused', 'bingo', 'ended', 'cancelled'] as const;
+const VALID_STATES = ['open', 'playing', 'paused', 'bingo', 'ended', 'cancelled'] as const;
 type GameState = typeof VALID_STATES[number];
 
 /**
@@ -42,10 +42,10 @@ type GameState = typeof VALID_STATES[number];
  * This prevents invalid state changes that could break the game flow
  */
 const VALID_TRANSITIONS: Record<GameState, GameState[]> = {
-  open: ['started', 'paused', 'cancelled'],
-  started: ['paused', 'bingo', 'ended', 'cancelled'],
-  paused: ['started', 'cancelled'], 
-  bingo: ['ended', 'started', 'cancelled'],
+  open: ['playing', 'paused', 'cancelled'],
+  playing: ['paused', 'bingo', 'ended', 'cancelled'],
+  paused: ['playing', 'cancelled'], 
+  bingo: ['ended', 'playing', 'cancelled'],
   ended: [], // Terminal state
   cancelled: [] // Terminal state
 };
@@ -55,7 +55,7 @@ const VALID_TRANSITIONS: Record<GameState, GameState[]> = {
  */
 const STATE_DESCRIPTIONS: Record<GameState, string> = {
   open: 'Players can join the game',
-  started: 'Game is active - players can mark words',
+  playing: 'Game is active - players can mark words',
   paused: 'Game is temporarily paused',
   bingo: 'BINGO called - awaiting verification', 
   ended: 'Game completed with winner',

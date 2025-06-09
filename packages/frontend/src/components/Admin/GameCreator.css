@@ -1,0 +1,161 @@
+/* Game Creator Component Styles */
+.game-creator {
+  padding: 0;
+}
+
+/* Header Styling */
+.game-creator-title {
+  color: #1e293b;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.game-creator-subtitle {
+  color: #64748b;
+  margin-bottom: 0;
+  font-size: 0.9rem;
+}
+
+/* Settings Card */
+.game-creator-settings-card {
+  border: 2px solid #0d6efd;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(13, 110, 253, 0.1);
+}
+
+.game-creator-settings-card .card-header {
+  border-radius: 10px 10px 0 0 !important;
+}
+
+/* Categories Card */
+.game-creator-categories-card {
+  border: 2px solid #0dcaf0;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(13, 202, 240, 0.1);
+}
+
+.game-creator-categories-card .card-header {
+  border-radius: 10px 10px 0 0 !important;
+}
+
+/* Category Selection Items */
+.game-creator-category-item {
+  border: none !important;
+  border-radius: 8px !important;
+  margin-bottom: 0.5rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.game-creator-category-item:hover {
+  background-color: #f8f9fa;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.game-creator-category-item.selected {
+  background-color: #e7f3ff;
+  border: 2px solid #0d6efd !important;
+}
+
+.game-creator-word-preview {
+  font-size: 0.85rem;
+  color: #6c757d;
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Word Summary Styling */
+.game-creator-word-summary {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid #e9ecef;
+}
+
+/* Grid Size Radio Buttons */
+.form-check {
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  transition: all 0.2s ease;
+}
+
+.form-check:hover {
+  background-color: #f8f9fa;
+  border-color: #0d6efd;
+}
+
+.form-check-input:checked + .form-check-label {
+  color: #0d6efd;
+  font-weight: 600;
+}
+
+/* Progress Bar Styling */
+.progress {
+  height: 8px;
+  border-radius: 4px;
+  background-color: #e9ecef;
+}
+
+.progress-bar {
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Badge Improvements */
+.badge {
+  font-weight: 500;
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+}
+
+/* Alert Improvements */
+.alert {
+  border-radius: 8px;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  animation: slideInDown 0.3s ease-out;
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+  .game-creator-settings-card {
+    margin-bottom: 2rem;
+  }
+  
+  .game-creator-word-preview {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .game-creator {
+    padding: 0 0.5rem;
+  }
+  
+  .game-creator-category-item {
+    padding: 1rem 0.75rem;
+  }
+  
+  .game-creator-word-summary {
+    padding: 0.75rem;
+  }
+  
+  .form-check {
+    padding: 0.5rem;
+  }
+} 

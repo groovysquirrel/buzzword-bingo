@@ -56,7 +56,7 @@ async function getGameHistory(event: APIGatewayProxyEvent) {
     return JSON.stringify({
       totalGames: gameHistory.length,
       completedGames: gameHistory.filter(g => g.status === 'ended' || g.status === 'cancelled').length,
-      activeGames: gameHistory.filter(g => ['open', 'started', 'paused', 'bingo'].includes(g.status)).length,
+      activeGames: gameHistory.filter(g => ['open', 'playing', 'paused', 'bingo'].includes(g.status)).length,
       timestamp: new Date().toISOString(),
       history: gameHistory,
     });

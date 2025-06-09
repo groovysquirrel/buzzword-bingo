@@ -57,6 +57,11 @@ export default function StatusScreen() {
     setAdminGameId(newGameId);
     setAdminGameStatus(newStatus);
     console.log("Status Screen: Game state changed via admin control:", newGameId, newStatus);
+    
+    // Refresh game history when a new game is created/started
+    if (newGameId && (newStatus === 'playing' || newStatus === 'open')) {
+      refreshHistory();
+    }
   };
 
   /**
@@ -79,7 +84,7 @@ export default function StatusScreen() {
   const formatGameDisplay = (game: any) => {
     const status = game.status.toUpperCase();
     const date = new Date(game.startTime).toLocaleDateString();
-    const isActive = ['OPEN', 'STARTED', 'PAUSED', 'BINGO'].includes(status);
+    const isActive = ['OPEN', 'PLAYING', 'PAUSED', 'BINGO'].includes(status);
     return `${game.gameId} (${status} - ${date})${isActive ? ' 🟢' : ''}`;
   };
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { API } from 'aws-amplify';
 import { Button, Modal } from 'react-bootstrap';
 import { useWebSocketLeaderboard } from '../../hooks/useWebSocketLeaderboard';
+import GameCreator from '../Admin/GameCreator';
 import './GameController.css';
 
 /**
@@ -13,7 +14,7 @@ import './GameController.css';
  * 
  * Game States Managed:
  * - open: Players can join the game
- * - started: Game is active, players can mark words  
+ * - playing: Game is active, players can mark words  
  * - paused: Game is temporarily stopped
  * - bingo: Someone has called bingo, awaiting verification
  * - ended: Game completed with winner
@@ -134,6 +135,21 @@ export const GameController: React.FC<GameControllerProps> = ({
   // Use WebSocket for real-time game state updates
   const { gameStatus: webSocketGameStatus } = useWebSocketLeaderboard(gameId);
 
+  // Fetch current game on component mount and setup periodic refresh
+  useEffect(() => {
+    console.log("GameController: Component mounted, fetching current game...");
+    fetchCurrentGame();
+
+    // Set up periodic refresh every 30 seconds to catch any missed updates
+    const refreshInterval = setInterval(() => {
+      console.log("GameController: Periodic refresh of current game state");
+      fetchCurrentGame();
+    }, 30000);
+
+    return () => {
+      clearInterval(refreshInterval);
+    };
+  }, []); // Empty dependency array - run once on mount
 
   // Update local game status when WebSocket provides updates
   useEffect(() => {
@@ -165,6 +181,9 @@ export const GameController: React.FC<GameControllerProps> = ({
     onConfirm: () => {}
   });
 
+  // Game Creator modal state
+  const [showGameCreator, setShowGameCreator] = useState(false);
+
   /**
    * Update game state and notify parent component
    */
@@ -191,12 +210,12 @@ export const GameController: React.FC<GameControllerProps> = ({
       } else {
         console.log("GameController: No active game found via API");
         setError(result.error || "No active game found");
-        updateGameState(null, "none");
+        updateGameState(null, "no_games");
       }
     } catch (error) {
       console.error("Failed to fetch current game:", error);
       setError(error instanceof Error ? error.message : "Failed to fetch game");
-      updateGameState(null, "none");
+      updateGameState(null, "no_games");
     }
   };
 
@@ -254,8 +273,8 @@ export const GameController: React.FC<GameControllerProps> = ({
       return;
     }
 
-    // Skip confirmation for resume action (started state) - execute immediately  
-    if (newState === 'started') {
+    // Skip confirmation for resume action (playing state) - execute immediately  
+    if (newState === 'playing') {
       setIsLoading(true);
       setError(null);
 
@@ -287,7 +306,7 @@ export const GameController: React.FC<GameControllerProps> = ({
 
     // Show confirmation for all other state changes
     const stateConfig = {
-      'started': { 
+      'playing': { 
         icon: broadcast ? '📢' : '▶️', 
         variant: 'success' as const, 
         title: broadcast ? 'Start All Players' : 'Start Host Only', 
@@ -362,50 +381,49 @@ export const GameController: React.FC<GameControllerProps> = ({
   };
 
   /**
-   * Create a new game and automatically start it
+   * Open the Game Creator modal
    */
-  const createNewGame = async () => {
+  const openGameCreator = () => {
+    setShowGameCreator(true);
+  };
+
+  /**
+   * Handle successful game creation from GameCreator
+   */
+  const handleGameCreated = async (newGameId: string) => {
+    console.log("New game created via GameCreator:", newGameId);
+    
+    // Close the modal
+    setShowGameCreator(false);
+    
     setIsLoading(true);
     setError(null);
 
-    // Use current game ID or create a new one
-    const targetGameId = gameId || 'new';
-
     try {
-      // Step 1: Create the new game
-      const result = await API.post("api", `/admin/games/${targetGameId}/new`, {});
-          
-      if (result.success && result.newGameId) {
-        console.log("New game created:", result.newGameId);
-        
-        // Step 2: Automatically start the host game
-        const startResult = await API.post("api", `/admin/games/${result.newGameId}/state`, {
-          body: {
-            newState: 'started',
-            reason: 'Host game started automatically after creation',
-            broadcast: false // Don't broadcast start to avoid confusing players
-          }
-        });
-
-        if (startResult.success) {
-          // Update state to 'started' immediately
-          updateGameState(result.newGameId, 'started');
-          await fetchGameDetails(result.newGameId);
-          
-          console.log("New game created and started:", result.newGameId);
-        } else {
-          // If start failed, fall back to just creating the game
-          updateGameState(result.newGameId, 'open');
-          await fetchGameDetails(result.newGameId);
-          setError("Game created but failed to start automatically");
+      // Start the newly created game
+      const startResult = await API.post("api", `/admin/games/${newGameId}/state`, {
+        body: {
+          newState: 'playing',
+          reason: 'Game started automatically after creation via GameCreator',
+          broadcast: false // Don't broadcast start to avoid confusing players
         }
-        
+      });
+
+      if (startResult.success) {
+        // Update the GameController state to playing
+        updateGameState(newGameId, 'playing');
+        await fetchGameDetails(newGameId);
+        console.log("Game created and started successfully:", newGameId);
       } else {
-        setError(result.error || "Failed to create new game");
+        // If start failed, fall back to open state
+        updateGameState(newGameId, 'open');
+        await fetchGameDetails(newGameId);
+        setError("Game created but failed to start automatically. You can start it manually.");
       }
     } catch (error) {
-      console.error("Failed to create and start new game:", error);
-      setError(error instanceof Error ? error.message : "Unknown error");
+      console.error("Failed to start newly created game:", error);
+      updateGameState(newGameId, 'open');
+      setError("Game created but failed to start. You can start it manually.");
     } finally {
       setIsLoading(false);
     }
@@ -437,7 +455,7 @@ export const GameController: React.FC<GameControllerProps> = ({
 
   // Live duration timer
   useEffect(() => {
-    if (gameDetails?.startTime && (gameStatus === 'started' || gameStatus === 'paused')) {
+    if (gameDetails?.startTime && (gameStatus === 'playing' || gameStatus === 'paused')) {
       const startTime = new Date(gameDetails.startTime).getTime();
       
       const updateTimer = () => {
@@ -450,7 +468,7 @@ export const GameController: React.FC<GameControllerProps> = ({
       updateTimer();
       
       // Update every second if game is active
-      const interval = gameStatus === 'started' ? setInterval(updateTimer, 1000) : null;
+      const interval = gameStatus === 'playing' ? setInterval(updateTimer, 1000) : null;
       
       return () => {
         if (interval) clearInterval(interval);
@@ -487,31 +505,40 @@ export const GameController: React.FC<GameControllerProps> = ({
   return (
     <div className={`game-controller ${className}`}>
       {/* Status Badge */}
-      {gameId && (
-        <span className={`status-badge status-badge--${gameStatus}`}>
-          {gameStatus.toUpperCase()}
-        </span>
-      )}
+      <span className={`status-badge status-badge--${gameStatus}`}>
+        {gameId ? gameStatus.toUpperCase() : 'NO GAMES'}
+      </span>
       
       {/* Timer */}
       <div className="timer-display">
-        {gameStatus === 'started' && liveDuration !== null
+        {!gameId 
+          ? "—:—:—"
+          : gameStatus === 'playing' && liveDuration !== null
           ? formatDuration(liveDuration)
           : formatDuration(gameDetails?.duration || 0)}
-        {gameStatus === 'started' && <span className="live-dot">●</span>}
+        {gameStatus === 'playing' && <span className="live-dot">●</span>}
       </div>
 
       {/* Action Buttons */}
       <button
+        className="action-btn action-btn--refresh"
+        onClick={() => fetchCurrentGame()}
+        disabled={isLoading}
+        title="Refresh Game State"
+      >
+        🔄
+      </button>
+
+      <button
         className="action-btn action-btn--new"
-        onClick={createNewGame}
+        onClick={openGameCreator}
         disabled={isLoading}
         title="Create New Game"
       >
         ➕
       </button>
 
-      {gameStatus === 'started' && (
+      {gameStatus === 'playing' && (
         <button
           className="action-btn action-btn--pause"
           onClick={() => changeGameState('paused')}
@@ -525,7 +552,7 @@ export const GameController: React.FC<GameControllerProps> = ({
       {gameStatus === 'paused' && (
         <button
           className="action-btn action-btn--resume"
-          onClick={() => changeGameState('started')}
+          onClick={() => changeGameState('playing')}
           disabled={isLoading}
           title="Resume Game"
         >
@@ -533,7 +560,7 @@ export const GameController: React.FC<GameControllerProps> = ({
         </button>
       )}
 
-      {(gameStatus === 'started' || gameStatus === 'paused') && (
+      {(gameStatus === 'playing' || gameStatus === 'paused') && (
         <button
           className="action-btn action-btn--end"
           onClick={() => showConfirmation({
@@ -585,7 +612,7 @@ export const GameController: React.FC<GameControllerProps> = ({
               icon: '❌',
               onConfirm: () => {
                 hideConfirmation();
-                changeGameState('started');
+                changeGameState('playing');
               }
             })}
             disabled={isLoading}
@@ -599,7 +626,7 @@ export const GameController: React.FC<GameControllerProps> = ({
       {/* Error Display */}
       {error && (
         <div className="error-message">
-          ⚠️ {error}
+          {gameStatus === 'no_games' ? '🎮' : '⚠️'} {error}
         </div>
       )}
 
@@ -621,6 +648,22 @@ export const GameController: React.FC<GameControllerProps> = ({
         onConfirm={confirmationModal.onConfirm}
         onCancel={hideConfirmation}
       />
+
+      {/* Game Creator Modal */}
+      <Modal 
+        show={showGameCreator} 
+        onHide={() => setShowGameCreator(false)}
+        size="lg"
+        backdrop="static"
+        keyboard={false}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>🎮 Create New Game</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="p-0">
+          <GameCreator onGameCreated={handleGameCreated} />
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

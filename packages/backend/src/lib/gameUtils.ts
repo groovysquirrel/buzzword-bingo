@@ -48,6 +48,15 @@ export const GAMEID_BUZZWORDS = [
 ];
 
 /**
+ * Grid size to dimensions mapping
+ */
+const GRID_DIMENSIONS = {
+  "3x3": { rows: 3, cols: 3, markable: 8 }, // 8 markable + 1 FREE
+  "4x4": { rows: 4, cols: 4, markable: 15 }, // 15 markable + 1 FREE
+  "5x5": { rows: 5, cols: 5, markable: 24 } // 24 markable + 1 FREE
+};
+
+/**
  * Generate a 3-character alphanumeric code (like X3K, 9Z2, etc.)
  */
 function generateAlphanumericCode(): string {
@@ -71,28 +80,36 @@ export function generateBuzzwordGameId(): string {
 }
 
 /**
- * Generate a random 5x5 bingo card from the master word list
+ * Generate a dynamic bingo card based on game settings
  */
-export function generateBingoCard(): string[][] {
-  // Ensure we have enough words (need 24 unique words + 1 FREE space)
-  if (MASTER_BUZZWORDS.length < 24) {
-    throw new Error("Not enough buzzwords in master list");
+export function generateDynamicBingoCard(
+  wordList: string[], 
+  gridSize: "3x3" | "4x4" | "5x5" = "5x5"
+): string[][] {
+  const dimensions = GRID_DIMENSIONS[gridSize];
+  
+  // Ensure we have enough words
+  if (wordList.length < dimensions.markable) {
+    throw new Error(`Not enough words for ${gridSize} grid. Need ${dimensions.markable}, have ${wordList.length}`);
   }
   
-  // Shuffle and take first 24 words
-  const shuffled = [...MASTER_BUZZWORDS].sort(() => Math.random() - 0.5);
-  const selectedWords = shuffled.slice(0, 24);
+  // Shuffle and take required number of words
+  const shuffled = [...wordList].sort(() => Math.random() - 0.5);
+  const selectedWords = shuffled.slice(0, dimensions.markable);
   
-  // Create 5x5 grid with FREE space in center
+  // Create grid with FREE space in center
   const grid: string[][] = [];
   let wordIndex = 0;
   
-  for (let row = 0; row < 5; row++) {
+  const centerRow = Math.floor(dimensions.rows / 2);
+  const centerCol = Math.floor(dimensions.cols / 2);
+  
+  for (let row = 0; row < dimensions.rows; row++) {
     grid[row] = [];
-    for (let col = 0; col < 5; col++) {
-      if (row === 2 && col === 2) {
-        // Center square is FREE with corporate flair
-        grid[row][col] = "SYNERGY (FREE)";
+    for (let col = 0; col < dimensions.cols; col++) {
+      if (row === centerRow && col === centerCol) {
+        // Center square is FREE (only if grid has odd dimensions)
+        grid[row][col] = dimensions.rows % 2 === 1 ? "SYNERGY (FREE)" : selectedWords[wordIndex++];
       } else {
         grid[row][col] = selectedWords[wordIndex];
         wordIndex++;
@@ -104,47 +121,100 @@ export function generateBingoCard(): string[][] {
 }
 
 /**
- * Check if a bingo card has a winning pattern
+ * Generate a random 5x5 bingo card from the master word list (legacy compatibility)
  */
-export function checkForBingo(markedWords: Set<string>, cardWords: string[][]): boolean {
-  // Add SYNERGY (FREE) space to marked words
-  const allMarkedWords = new Set([...markedWords, "SYNERGY (FREE)"]);
+export function generateBingoCard(): string[][] {
+  return generateDynamicBingoCard(MASTER_BUZZWORDS, "5x5");
+}
+
+/**
+ * Check if a bingo card has a winning pattern (supports multiple grid sizes)
+ */
+export function checkForDynamicBingo(
+  markedWords: Set<string>, 
+  cardWords: string[][], 
+  gridSize: "3x3" | "4x4" | "5x5" = "5x5"
+): { hasBingo: boolean; bingoType?: string; winningWords?: string[] } {
+  const dimensions = GRID_DIMENSIONS[gridSize];
+  
+  // Add FREE space to marked words if it exists
+  const allMarkedWords = new Set([...markedWords]);
+  if (dimensions.rows % 2 === 1) {
+    allMarkedWords.add("SYNERGY (FREE)");
+  }
   
   // Check rows
-  for (let row = 0; row < 5; row++) {
+  for (let row = 0; row < dimensions.rows; row++) {
     if (cardWords[row].every(word => allMarkedWords.has(word))) {
-      return true;
+      return {
+        hasBingo: true,
+        bingoType: `Row ${row + 1}`,
+        winningWords: cardWords[row]
+      };
     }
   }
   
   // Check columns
-  for (let col = 0; col < 5; col++) {
-    if (cardWords.every(row => allMarkedWords.has(row[col]))) {
-      return true;
+  for (let col = 0; col < dimensions.cols; col++) {
+    const columnWords = cardWords.map(row => row[col]);
+    if (columnWords.every(word => allMarkedWords.has(word))) {
+      return {
+        hasBingo: true,
+        bingoType: `Column ${col + 1}`,
+        winningWords: columnWords
+      };
     }
   }
   
-  // Check diagonal (top-left to bottom-right)
-  if (cardWords.every((row, index) => allMarkedWords.has(row[index]))) {
-    return true;
+  // Check diagonals (only for square grids)
+  if (dimensions.rows === dimensions.cols) {
+    // Main diagonal (top-left to bottom-right)
+    const mainDiagonalWords = cardWords.map((row, index) => row[index]);
+    if (mainDiagonalWords.every(word => allMarkedWords.has(word))) {
+      return {
+        hasBingo: true,
+        bingoType: "Main Diagonal",
+        winningWords: mainDiagonalWords
+      };
+    }
+    
+    // Anti-diagonal (top-right to bottom-left)
+    const antiDiagonalWords = cardWords.map((row, index) => row[dimensions.cols - 1 - index]);
+    if (antiDiagonalWords.every(word => allMarkedWords.has(word))) {
+      return {
+        hasBingo: true,
+        bingoType: "Anti Diagonal",
+        winningWords: antiDiagonalWords
+      };
+    }
   }
   
-  // Check diagonal (top-right to bottom-left)
-  if (cardWords.every((row, index) => allMarkedWords.has(row[4 - index]))) {
-    return true;
-  }
-  
-  return false;
+  return { hasBingo: false };
 }
 
 /**
- * Calculate progress percentage for a player
+ * Check if a bingo card has a winning pattern (legacy 5x5 compatibility)
  */
-export function calculateProgress(markedWords: Set<string>): number {
-  // 24 total markable words (25 - 1 FREE space)
-  const totalWords = 24;
+export function checkForBingo(markedWords: Set<string>, cardWords: string[][]): boolean {
+  const result = checkForDynamicBingo(markedWords, cardWords, "5x5");
+  return result.hasBingo;
+}
+
+/**
+ * Calculate progress percentage for a player (supports multiple grid sizes)
+ */
+export function calculateDynamicProgress(markedWords: Set<string>, gridSize: "3x3" | "4x4" | "5x5" = "5x5"): number {
+  const dimensions = GRID_DIMENSIONS[gridSize];
+  const totalWords = dimensions.markable;
   const markedCount = markedWords.size;
   return Math.round((markedCount / totalWords) * 100);
+}
+
+/**
+ * Calculate progress percentage for a player (legacy compatibility)
+ */
+export function calculateProgress(markedWords: Set<string>): number {
+  return calculateDynamicProgress(markedWords, "5x5");
 }
 
 /**
@@ -162,12 +232,12 @@ export async function getCurrentActiveGameId(): Promise<string | null> {
     // Get all active games
     const result = await dynamoDb.send(new ScanCommand({
       TableName: Resource.Games.name,
-      FilterExpression: "#status IN (:started, :open, :paused, :bingo)",
+      FilterExpression: "#status IN (:playing, :open, :paused, :bingo)",
       ExpressionAttributeNames: {
         "#status": "status",
       },
       ExpressionAttributeValues: {
-        ":started": "started",
+        ":playing": "playing",
         ":open": "open", 
         ":paused": "paused",
         ":bingo": "bingo"

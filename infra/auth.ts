@@ -1,5 +1,4 @@
 import { api } from "./api";
-import { bucket } from "./storage";
 
 const region = aws.getRegionOutput().name;
 
@@ -18,12 +17,6 @@ export const identityPool = new sst.aws.CognitoIdentityPool("IdentityPool", {
   ],
   permissions: {
     authenticated: [
-      {
-        actions: ["s3:*"],
-        resources: [
-          $concat(bucket.arn, "/private/${cognito-identity.amazonaws.com:sub}/*"),
-        ],
-      },
       {
         actions: [
           "execute-api:*",

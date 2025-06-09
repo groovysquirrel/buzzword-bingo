@@ -20,7 +20,7 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
   const getStatusDisplayText = (status: string): string => {
     switch (status) {
       case "open": return "OPEN";
-      case "started": return "ACTIVE SESSION";
+      case "playing": return "ACTIVE SESSION";
       case "paused": return "PAUSED";
       case "bingo": return "EVALUATION PENDING";
       case "ended": return "SESSION COMPLETED";

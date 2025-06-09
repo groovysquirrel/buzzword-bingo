@@ -94,12 +94,18 @@ async function callBingo(event: APIGatewayProxyEvent) {
 
   const game = gameResult.Item;
   if (!game) {
-    throw new Error(`Game ${gameId} not found`);
+    console.log(`Game ${gameId} not found when calling BINGO - returning clear cache instruction`);
+    return JSON.stringify({
+      action: "clear_cache",
+      reason: "game_not_found_during_bingo",
+      message: "This game no longer exists. The system may have been reset.",
+      timestamp: new Date().toISOString()
+    });
   }
 
-  // Only allow BINGO calls in started games
-  if (game.status !== "started") {
-    throw new Error(`Cannot call BINGO in game with status "${game.status}". Game must be started.`);
+  // Only allow BINGO calls in playing games
+  if (game.status !== "playing") {
+    throw new Error(`Cannot call BINGO in game with status "${game.status}". Game must be playing.`);
   }
 
   // Get player's bingo card
@@ -168,7 +174,7 @@ async function callBingo(event: APIGatewayProxyEvent) {
   await wsManager.broadcastMessage({
     type: 'game_state_changed',
     gameId,
-    previousState: 'started',
+          previousState: 'playing',
     newState: 'bingo',
     timestamp: new Date().toISOString(),
     reason: `BINGO called by ${currentNickname}`,

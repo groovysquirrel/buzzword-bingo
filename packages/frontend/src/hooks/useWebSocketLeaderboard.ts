@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { SessionInfo, LeaderboardResponse, GameEvent } from '../types/game';
 import { API } from 'aws-amplify';
+import { clearAllLocalStorage } from './useGameSession';
 
 interface UseWebSocketLeaderboardResult {
   leaderboard: LeaderboardResponse | null;
@@ -299,6 +300,9 @@ export function useWebSocketLeaderboard(input: SessionInfo | string | null): Use
           totalPlayers: data.leaderboard?.length || 0,
           players: data.leaderboard?.map((p: any) => ({ nickname: p.nickname, sessionId: p.sessionId, points: p.points })) || []
         });
+        
+        // Note: Removed complex empty game detection in favor of direct system_purged events
+        
         if (data.leaderboard) {
           setLeaderboard({
             gameId: data.gameId,
@@ -313,6 +317,19 @@ export function useWebSocketLeaderboard(input: SessionInfo | string | null): Use
       case 'activity_event':
         console.log(`🎭 Activity event:`, data.event);
         if (data.event) {
+          // Check for system purge event
+          if (data.event.type === 'system_purged') {
+            console.log('🚨 SYSTEM PURGE DETECTED - Auto-clearing localStorage and redirecting');
+            clearAllLocalStorage();
+            
+            // Show alert to user before redirect
+            alert('System has been reset. You will be redirected to rejoin the game.');
+            
+            // Force redirect to join page
+            window.location.href = '/';
+            return; // Don't process this as a regular activity event
+          }
+          
           setEvents(prev => [data.event, ...prev.slice(0, 49)]); // Keep last 50 events
         }
         break;

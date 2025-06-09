@@ -19,12 +19,12 @@ async function newGame(event: APIGatewayProxyEvent) {
   // First, mark ALL active games as complete to ensure we only have one active game
   const activeGamesResult = await dynamoDb.send(new ScanCommand({
     TableName: Resource.Games.name,
-    FilterExpression: "#status IN (:started, :open, :paused, :bingo)",
+    FilterExpression: "#status IN (:playing, :open, :paused, :bingo)",
     ExpressionAttributeNames: {
       "#status": "status",
     },
     ExpressionAttributeValues: {
-      ":started": "started",
+      ":playing": "playing",
       ":open": "open", 
       ":paused": "paused",
       ":bingo": "bingo"
@@ -142,7 +142,7 @@ async function newGame(event: APIGatewayProxyEvent) {
 
   return JSON.stringify({
     success: true,
-    message: `New game started`,
+          message: `New game created`,
     previousGameId: currentGameId,
     previousActiveGames: activeGames.map(g => g.gameId),
     previousGameCompletedAt: now,

@@ -122,11 +122,11 @@ export const getSessionAction = (
     }
     
     // Handle regular game switches (different game ID)
-    if (newState === 'started' && gameId !== currentGameId) {
+    if (newState === 'playing' && gameId !== currentGameId) {
       return {
         type: 'SWITCH_GAME',
         gameId,
-        message: `Game started! Switching to game ${gameId}`
+        message: `Game playing! Switching to game ${gameId}`
       };
     }
     
@@ -143,7 +143,7 @@ export const getSessionAction = (
           return {
             type: 'SWITCH_GAME',
             gameId: data.newGameId,
-            message: `New game started! Switching to game ${data.newGameId}`
+            message: `New game created! Switching to game ${data.newGameId}`
           };
         }
         break;
@@ -207,7 +207,7 @@ export const formatEventMessage = (event: UnifiedEvent): string => {
     case EVENT_TYPES.GAME_RESET:
       return `Assessment session ${normalized.data.gameId} reset (${normalized.data.progressRecordsCleared} participant records archived)`;
     case EVENT_TYPES.NEW_GAME:
-      return `New assessment started: ${normalized.data.newGameId}`;
+      return `New assessment created: ${normalized.data.newGameId}`;
     case EVENT_TYPES.GAME_STARTED:
       return `Assessment session commenced: ${normalized.data.gameId}`;
     case EVENT_TYPES.GAME_ENDED:

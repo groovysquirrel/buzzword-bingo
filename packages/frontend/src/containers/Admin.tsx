@@ -10,7 +10,10 @@ import Button from "react-bootstrap/Button";
 import Nav from "react-bootstrap/Nav";
 import Tab from "react-bootstrap/Tab";
 
-import SystemTester from "../components/SystemTester";
+import SystemTester from "../components/Admin/SystemTester";
+import GameSimulator from "../components/Admin/GameSimulator";
+import WordManager from "../components/Admin/WordManager";
+import GameCreator from "../components/Admin/GameCreator";
 import "./Admin.css";
 
 interface GameHistoryEntry {
@@ -156,6 +159,14 @@ Are you absolutely sure you want to proceed?`;
                     </Nav.Item>
                     <Nav.Item>
                       <Nav.Link 
+                  eventKey="game-simulator"
+                  className={activeTab === "game-simulator" ? "active" : ""}
+                      >
+                  🎯 Game Simulator
+                      </Nav.Link>
+                    </Nav.Item>
+                    <Nav.Item>
+                      <Nav.Link 
                   eventKey="system-purge"
                   className={activeTab === "system-purge" ? "active" : ""}
                       >
@@ -178,6 +189,14 @@ Are you absolutely sure you want to proceed?`;
                   📝 Word Manager
                       </Nav.Link>
                     </Nav.Item>
+                    <Nav.Item>
+                      <Nav.Link 
+                  eventKey="game-creator"
+                  className={activeTab === "game-creator" ? "active" : ""}
+                      >
+                  🎮 Game Creator
+                      </Nav.Link>
+                    </Nav.Item>
                   </Nav>
           </div>
 
@@ -188,9 +207,20 @@ Are you absolutely sure you want to proceed?`;
                 <div className="admin-content__body">
                   <h2 className="admin-section-title">System Testing Interface</h2>
                   <p className="admin-section-subtitle">
-                    Comprehensive testing tools for API connectivity, player management, and real-time features
+                    Backend API testing tools for username validation and word management
                   </p>
                   <SystemTester />
+                </div>
+              </Tab.Pane>
+
+              {/* Game Simulator Tab */}
+              <Tab.Pane eventKey="game-simulator">
+                <div className="admin-content__body">
+                  <h2 className="admin-section-title">Multi-User Game Simulator</h2>
+                  <p className="admin-section-subtitle">
+                    Test multi-player game interactions, bingo card functionality, and real-time leaderboard updates
+                  </p>
+                  <GameSimulator />
                 </div>
               </Tab.Pane>
 
@@ -422,59 +452,18 @@ Are you absolutely sure you want to proceed?`;
                   <p className="admin-section-subtitle">
                     Manage buzzwords, categories, and game content for bingo card generation
                   </p>
+                  <WordManager />
+                      </div>
+                    </Tab.Pane>
 
-                  <div className="admin-alert admin-alert-info">
-                    <div className="admin-alert__title">🚧 Coming Soon</div>
-                    <p className="mb-2">
-                      The Game Word Manager interface is under development. This will provide tools for:
-                    </p>
-                    <ul className="mb-0">
-                      <li>Managing buzzword dictionary and categories</li>
-                      <li>Adding/removing words from the game pool</li>
-                      <li>Configuring word weights and rarity</li>
-                      <li>Setting up themed word collections</li>
-                      <li>Import/export word lists</li>
-                    </ul>
-                  </div>
-                        
-                        <Row className="g-3">
-                    <Col md={6}>
-                      <div className="admin-stat-card">
-                        <div className="admin-stat-card__icon">📚</div>
-                        <div className="admin-stat-card__title">Word Dictionary</div>
-                        <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 0 0' }}>
-                          Manage the complete collection of buzzwords
-                        </p>
-                      </div>
-                    </Col>
-                    <Col md={6}>
-                      <div className="admin-stat-card">
-                        <div className="admin-stat-card__icon">🏷️</div>
-                        <div className="admin-stat-card__title">Categories</div>
-                        <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 0 0' }}>
-                          Organize words by theme and difficulty
-                        </p>
-                      </div>
-                    </Col>
-                    <Col md={6}>
-                      <div className="admin-stat-card">
-                        <div className="admin-stat-card__icon">⚖️</div>
-                        <div className="admin-stat-card__title">Word Weights</div>
-                        <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 0 0' }}>
-                          Configure rarity and selection probability
-                        </p>
-                                </div>
-                          </Col>
-                    <Col md={6}>
-                      <div className="admin-stat-card">
-                        <div className="admin-stat-card__icon">📊</div>
-                        <div className="admin-stat-card__title">Analytics</div>
-                        <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 0 0' }}>
-                          Track word usage and game balance
-                        </p>
-                      </div>
-                          </Col>
-                        </Row>
+              {/* Game Creator Tab */}
+              <Tab.Pane eventKey="game-creator">
+                <div className="admin-content__body">
+                  <h2 className="admin-section-title">Game Creator</h2>
+                  <p className="admin-section-subtitle">
+                    Create new games with configurable settings, word categories, and grid sizes
+                  </p>
+                  <GameCreator />
                       </div>
                     </Tab.Pane>
                   </Tab.Content>

@@ -1,0 +1,37 @@
+[
+    {
+    "category": "Technology buzzwords",
+    "mode": "5x5",
+    "words": [
+    "AI", "Machine Learning", "Cloud Native", "Microservices", "Kubernetes",
+    "Serverless", "Edge Computing", "Big Data", "IoT", "Blockchain",
+    "Digital Twin", "API-First", "DevOps", "GitOps", "Infrastructure as Code",
+    "Containerization", "Orchestration", "Auto-scaling", "Load Balancing", "CDN"]
+},
+{
+    "category": "Business buzzwords",
+    "mode": "5x5",
+    "words":  ["Leverage", "Optimize", "Streamline", "Paradigm Shift",
+    "Disruptive Innovation", "Game Changer", "Best Practice", "Core Competency", "Value Proposition",
+    "Market Penetration", "Thought Leadership", "Customer Journey", "User Experience", "Growth Hacking",
+    "Agile Transformation", "Digital Transformation", "Change Management", "Stakeholder Alignment", "ROI"
+    ]
+},
+{
+    "category": "Strategy buzzwords",
+    "mode": "5x5",
+    "words": ["Strategic Initiative", "Roadmap", "Milestone", "KPI", "OKR",
+    "North Star", "Vision", "Mission Critical", "Scalable", "Sustainable",
+    "Future-Proof", "Innovation Lab", "Center of Excellence", "Tiger Team", "War Room",
+    "Deep Dive", "Circle Back", "Touch Base", "Ideate", "Pivot"]
+},
+{
+    "category": "Process buzzwords",
+    "mode": "5x5",
+    "words": ["Workflow", "Pipeline", "Framework", "Methodology", "Best-in-Class",
+    "End-to-End", "Holistic Approach", "Cross-functional", "Collaborative", "Integrated",
+    "Seamless", "Frictionless", "Omnichannel", "360-degree", "Full-stack",
+    "Low-code", "No-code", "Self-service", "Automated", "Intelligent"]
+}
+
+]

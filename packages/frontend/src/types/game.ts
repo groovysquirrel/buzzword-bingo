@@ -145,7 +145,7 @@ export interface BingoGridProps {
   onMarkWord: (word: string) => void;
   /** Function called when a BINGO pattern is detected */
   onBingoDetected?: (bingoResult: { hasBingo: boolean; bingoType?: string; winningWords?: string[] }) => void;
-  /** Current game state (open, started, paused, bingo, ended) */
+  /** Current game state (open, playing, paused, bingo, ended) */
   gameStatus?: string;
   /** Whether the grid should be disabled (non-interactive) */
   disabled?: boolean;

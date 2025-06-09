@@ -1,6 +1,3 @@
-// Create an S3 bucket
-export const bucket = new sst.aws.Bucket("Uploads");
-
 // Players table - stores session-based player information
 export const playersTable = new sst.aws.Dynamo("Players", {
   fields: {
@@ -74,6 +71,14 @@ export const eventsTable = new sst.aws.Dynamo("Events", {
   ttl: "expiresAt", // Events expire after 24 hours
 });
 
+// Words table - stores word categories for dynamic game word selection
+export const wordsTable = new sst.aws.Dynamo("Words", {
+  fields: {
+    category: "string",
+  },
+  primaryIndex: { hashKey: "category" },
+});
+
 // Export all tables for use in other files
 export const tables = {
   players: playersTable,
@@ -82,6 +87,7 @@ export const tables = {
   completedBingo: completedBingoTable,
   events: eventsTable,
   bingoCards: bingoCardsTable,
+  words: wordsTable,
 };
 
 // Keep the old table export name for backwards compatibility during transition

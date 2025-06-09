@@ -22,32 +22,38 @@ import { gameWebSocket, webSocketApiUrl } from "./websocket";
 
 const joinFunction = new sst.aws.Function("JoinFunction", {
   handler: "packages/backend/src/game/joinGame.main",
-  link: [tables.players, tables.games, tables.bingoProgress, tables.completedBingo, tables.events, tables.bingoCards, gameWebSocket],
-  environment: { WEBSOCKET_API_ENDPOINT: webSocketApiUrl }
+  link: [tables.players, tables.games, tables.bingoProgress, tables.completedBingo, tables.events, tables.bingoCards, tables.words, gameWebSocket],
+  environment: { WEBSOCKET_API_ENDPOINT: webSocketApiUrl },
+  permissions: [
+    {
+      actions: ["bedrock:InvokeModel"],
+      resources: ["arn:aws:bedrock:us-east-1::foundation-model/meta.llama3-8b-instruct-v1:0"]
+    }
+  ]
 });
 
 const markWordFunction = new sst.aws.Function("MarkWordFunction", {
   handler: "packages/backend/src/game/markWord.main",
-  link: [tables.players, tables.games, tables.bingoProgress, tables.completedBingo, tables.events, tables.bingoCards, gameWebSocket],
+  link: [tables.players, tables.games, tables.bingoProgress, tables.completedBingo, tables.events, tables.bingoCards, tables.words, gameWebSocket],
   environment: { WEBSOCKET_API_ENDPOINT: webSocketApiUrl }
 });
 
 // Admin functions that broadcast game state changes
 const newGameFunction = new sst.aws.Function("NewGameFunction", {
   handler: "packages/backend/src/admin/newGame.main",
-  link: [tables.players, tables.games, tables.bingoProgress, tables.completedBingo, tables.events, tables.bingoCards, gameWebSocket],
+  link: [tables.players, tables.games, tables.bingoProgress, tables.completedBingo, tables.events, tables.bingoCards, tables.words, gameWebSocket],
   environment: { WEBSOCKET_API_ENDPOINT: webSocketApiUrl }
 });
 
 const gameStateFunction = new sst.aws.Function("GameStateFunction", {
   handler: "packages/backend/src/admin/gameState.main",
-  link: [tables.players, tables.games, tables.bingoProgress, tables.completedBingo, tables.events, tables.bingoCards, gameWebSocket],
+  link: [tables.players, tables.games, tables.bingoProgress, tables.completedBingo, tables.events, tables.bingoCards, tables.words, gameWebSocket],
   environment: { WEBSOCKET_API_ENDPOINT: webSocketApiUrl }
 });
 
 const resetGameFunction = new sst.aws.Function("ResetGameFunction", {
   handler: "packages/backend/src/admin/resetGame.main",
-  link: [tables.players, tables.games, tables.bingoProgress, tables.completedBingo, tables.events, tables.bingoCards, gameWebSocket],
+  link: [tables.players, tables.games, tables.bingoProgress, tables.completedBingo, tables.events, tables.bingoCards, tables.words, gameWebSocket],
   environment: { WEBSOCKET_API_ENDPOINT: webSocketApiUrl }
 });
 
@@ -64,7 +70,7 @@ export const api = new sst.aws.ApiGatewayV2("Api", {
     route: {
       handler: {
         // All routes have access to database tables by default
-        link: [tables.players, tables.games, tables.bingoProgress, tables.completedBingo, tables.events, tables.bingoCards, gameWebSocket],
+        link: [tables.players, tables.games, tables.bingoProgress, tables.completedBingo, tables.events, tables.bingoCards, tables.words, gameWebSocket],
       },
     }
   },
@@ -116,7 +122,7 @@ api.route("POST /bingo/{gameId}/mark", markWordFunction.arn);
 // Call BINGO when player achieves winning pattern
 const callBingoFunction = new sst.aws.Function("CallBingoFunction", {
   handler: "packages/backend/src/game/callBingo.main",
-  link: [tables.players, tables.games, tables.bingoProgress, tables.completedBingo, tables.events, tables.bingoCards, gameWebSocket],
+  link: [tables.players, tables.games, tables.bingoProgress, tables.completedBingo, tables.events, tables.bingoCards, tables.words, gameWebSocket],
   environment: { WEBSOCKET_API_ENDPOINT: webSocketApiUrl }
 });
 api.route("POST /bingo/{gameId}/call", callBingoFunction.arn);
@@ -127,8 +133,14 @@ api.route("GET /game/{gameId}/status", "packages/backend/src/game/getGameStatus.
 // Update player profile (nickname)
 const updateProfileFunction = new sst.aws.Function("UpdateProfileFunction", {
   handler: "packages/backend/src/game/updateProfile.main",
-  link: [tables.players, tables.games, tables.bingoProgress, tables.completedBingo, tables.events, tables.bingoCards, gameWebSocket],
-  environment: { WEBSOCKET_API_ENDPOINT: webSocketApiUrl }
+  link: [tables.players, tables.games, tables.bingoProgress, tables.completedBingo, tables.events, tables.bingoCards, tables.words, gameWebSocket],
+  environment: { WEBSOCKET_API_ENDPOINT: webSocketApiUrl },
+  permissions: [
+    {
+      actions: ["bedrock:InvokeModel"],
+      resources: ["arn:aws:bedrock:us-east-1::foundation-model/meta.llama3-8b-instruct-v1:0"]
+    }
+  ]
 });
 api.route("POST /profile/update", updateProfileFunction.arn);
 
@@ -149,3 +161,24 @@ api.route("POST /admin/games/{gameId}/reset", resetGameFunction.arn);           
 // System administration
 api.route("POST /admin/system/purge", "packages/backend/src/admin/systemPurge.main"); // Clear all data
 api.route("GET /admin/test", "packages/backend/src/admin/test.main");                // System health check
+
+// Username validation testing
+const testUsernameFunction = new sst.aws.Function("TestUsernameFunction", {
+  handler: "packages/backend/src/admin/testUsername.main",
+  link: [tables.players],
+  permissions: [
+    {
+      actions: ["bedrock:InvokeModel"],
+      resources: ["arn:aws:bedrock:us-east-1::foundation-model/meta.llama3-8b-instruct-v1:0"]
+    }
+  ]
+});
+api.route("POST /admin/test/username", testUsernameFunction.arn);              // Test username validation
+
+// Word management endpoints
+api.route("GET /admin/words/categories", "packages/backend/src/admin/wordCategories.main");   // Load word categories
+api.route("POST /admin/words/seed", "packages/backend/src/admin/seedWords.main");             // Seed default words
+api.route("POST /admin/words/categories", "packages/backend/src/admin/saveWordCategory.main"); // Save word category
+api.route("DELETE /admin/words/categories/{categoryName}", "packages/backend/src/admin/deleteWordCategory.main"); // Delete word category
+api.route("POST /admin/games/create", "packages/backend/src/admin/createGame.main");          // Create test game
+api.route("POST /admin/games/create-with-settings", "packages/backend/src/admin/createGameWithSettings.main"); // Create game with settings

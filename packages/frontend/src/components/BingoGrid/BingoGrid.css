@@ -16,8 +16,6 @@
 
 .bingo-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  grid-template-rows: repeat(5, 1fr);
   gap: 0;
   border: 2px solid #64748b;
   border-radius: 8px;
@@ -26,6 +24,22 @@
   width: 100%;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   background-color: #ffffff;
+}
+
+/* Dynamic grid sizing based on content */
+.bingo-grid--3x3 {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+}
+
+.bingo-grid--4x4 {
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+}
+
+.bingo-grid--5x5 {
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
 }
 
 .bingo-row {
@@ -56,12 +70,28 @@
   letter-spacing: -0.025em;
 }
 
-/* Remove borders on edges */
-.bingo-cell:nth-child(5n) {
+/* Remove borders on edges - dynamic based on grid size */
+.bingo-grid--3x3 .bingo-cell:nth-child(3n) {
   border-right: none;
 }
 
-.bingo-cell:nth-last-child(-n+5) {
+.bingo-grid--3x3 .bingo-cell:nth-last-child(-n+3) {
+  border-bottom: none;
+}
+
+.bingo-grid--4x4 .bingo-cell:nth-child(4n) {
+  border-right: none;
+}
+
+.bingo-grid--4x4 .bingo-cell:nth-last-child(-n+4) {
+  border-bottom: none;
+}
+
+.bingo-grid--5x5 .bingo-cell:nth-child(5n) {
+  border-right: none;
+}
+
+.bingo-grid--5x5 .bingo-cell:nth-last-child(-n+5) {
   border-bottom: none;
 }
 

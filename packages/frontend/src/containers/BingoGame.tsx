@@ -4,7 +4,7 @@ import { Container, Row, Col, Card, Button, Alert, Badge } from 'react-bootstrap
 import { API } from 'aws-amplify';
 
 // Import our refactored hooks and components
-import { useGameSession } from '../hooks/useGameSession';
+import { useGameSession, clearAllLocalStorage } from '../hooks/useGameSession';
 import { useBingoGame } from '../hooks/useBingoGame';
 import { useWebSocketLeaderboard } from '../hooks/useWebSocketLeaderboard';
 import { BingoGrid, checkForBingo } from '../components/BingoGrid';
@@ -14,17 +14,33 @@ import { formatEventMessage, normalizeEvent } from '../utils/eventFormatter';
 import './BingoGame.css';
 
 /**
- * Corporate Assessment Game Container Component
+ * BingoGame Container Component
  * 
- * Refactored to use custom hooks, reusable components, and clean CSS classes.
- * This maintains all the original functionality while being much cleaner and more maintainable.
- * Now uses real-time WebSocket game state updates instead of API polling.
+ * Main game interface component that handles:
+ * - Game session management and validation
+ * - Bingo card display and word marking
+ * - Real-time game state updates via WebSocket
+ * - BINGO detection and calling
+ * - Player status and leaderboard integration
+ * - Error handling and recovery
  */
 export default function BingoGame() {
   const navigate = useNavigate();
   
-  // Custom hooks handle all the complex logic that was previously in this component
-  const { session, loading: sessionLoading, gameStatusMessage, updateSession } = useGameSession();
+  // ============================================================================
+  // HOOKS & DATA MANAGEMENT
+  // ============================================================================
+  
+  /**
+   * Core game session management
+   * Handles user session, game joining, and session validation
+   */
+  const { session, loading: sessionLoading, gameStatusMessage, updateSession, clearSession } = useGameSession();
+  
+  /**
+   * Bingo game logic and card management
+   * Handles word marking, BINGO calling, and card state
+   */
   const {
     bingoCard,
     loading: gameLoading,
@@ -35,42 +51,133 @@ export default function BingoGame() {
     clearError: clearGameError
   } = useBingoGame(session);
 
-  // Get current player rank and real-time game status using WebSocket leaderboard (more efficient than SSE)
+  /**
+   * Real-time game updates via WebSocket
+   * Provides live leaderboard, events, game status, and winner info
+   */
   const { leaderboard, events, gameStatus, winnerInfo } = useWebSocketLeaderboard(session);
 
-  // Use real-time WebSocket game status, defaulting to "open" if not available
-  const effectiveGameStatus = gameStatus || "open";
+  // ============================================================================
+  // COMPONENT STATE
+  // ============================================================================
+  
+  /**
+   * BINGO Detection State
+   * Tracks whether the current player has a valid BINGO pattern
+   */
+  const [canCallBingo, setCanCallBingo] = useState(false);
+  const [detectedBingo, setDetectedBingo] = useState<{ 
+    hasBingo: boolean; 
+    bingoType?: string; 
+    winningWords?: string[] 
+  } | null>(null);
+  
+  /**
+   * Game Flow State
+   * Manages BINGO calls, secret words, and game transitions
+   */
+  const [secretWord, setSecretWord] = useState<string | null>(null);
+  const [hasBingoCalled, setHasBingoCalled] = useState(false);
+  
+  /**
+   * UI State
+   * Handles loading states and error messages for user actions
+   */
+  const [_joiningNextGame, setJoiningNextGame] = useState(false);
+  const [joinGameError, setJoinGameError] = useState<string | null>(null);
 
-  const getCurrentPlayerRank = () => {
+  // ============================================================================
+  // COMPUTED VALUES
+  // ============================================================================
+  
+  /**
+   * Current game status with sensible default
+   * Uses WebSocket status or defaults to "open" for new games
+   */
+  const effectiveGameStatus = gameStatus || "open";
+  
+  /**
+   * Get current player's rank in the leaderboard
+   */
+  const getCurrentPlayerRank = (): number | null => {
     if (!leaderboard || !session) return null;
     const userIndex = leaderboard.leaderboard.findIndex(
       (entry: LeaderboardEntry) => entry.sessionId === session.sessionId
     );
     return userIndex !== -1 ? userIndex + 1 : null;
   };
-  
-  // Local state for BINGO detection, celebration, and game transitions
-  const [canCallBingo, setCanCallBingo] = useState(false);
-  const [detectedBingo, setDetectedBingo] = useState<{ hasBingo: boolean; bingoType?: string; winningWords?: string[] } | null>(null);
-  const [secretWord, setSecretWord] = useState<string | null>(null);
-  const [_joiningNextGame, setJoiningNextGame] = useState(false);
-  const [hasBingoCalled, setHasBingoCalled] = useState(false); // Track if current player called BINGO
-  const [joinGameError, setJoinGameError] = useState<string | null>(null); // Error for join next game
 
-  // Check for BINGO patterns whenever marked words change
+  /**
+   * Get latest activity for the banner (excluding current player)
+   */
+  const getLatestActivity = (): GameEvent | null => {
+    if (!events || events.length === 0) return null;
+    
+    return events.find((event: GameEvent) => {
+      const normalizedEvent = normalizeEvent(event);
+      const playerNickname = normalizedEvent.data?.nickname;
+      return playerNickname && playerNickname !== session?.nickname;
+    }) || null;
+  };
+
+  // ============================================================================
+  // EFFECT HANDLERS
+  // ============================================================================
+  
+  /**
+   * Handle critical errors that require session reset
+   * Monitors for game not found or session expired errors
+   */
   useEffect(() => {
-    if (bingoCard) {
-      const bingoCheck = checkForBingo(bingoCard.markedWords, bingoCard.words);
-      setCanCallBingo(bingoCheck.hasBingo);
-      if (bingoCheck.hasBingo) {
-        setDetectedBingo(bingoCheck);
-      } else {
-        setDetectedBingo(null);
-      }
+    if (!gameError || typeof gameError !== 'string') return;
+
+    // Handle clear cache instruction from backend
+    if (gameError.startsWith('CLEAR_CACHE|')) {
+      console.log("🚨 Clear cache instruction received - redirecting");
+      clearSession();
+      navigate("/");
+      return;
+    }
+
+    // Handle game not found (system reset)
+    if (gameError.startsWith('GAME_NOT_FOUND|')) {
+      console.log("🚨 Game not found - clearing session and redirecting");
+      clearAllLocalStorage();
+      clearSession();
+      navigate("/");
+      return;
+    }
+    
+    // Handle session expired
+    if (gameError.startsWith('SESSION_EXPIRED|')) {
+      console.log("🚨 Session expired - clearing session and redirecting");
+      clearSession();
+      navigate("/");
+      return;
+    }
+  }, [gameError, clearSession, navigate]);
+
+  /**
+   * Monitor bingo card for winning patterns
+   * Automatically detects when player has a valid BINGO
+   */
+  useEffect(() => {
+    if (!bingoCard) return;
+    
+    const bingoCheck = checkForBingo(bingoCard.markedWords, bingoCard.words);
+    setCanCallBingo(bingoCheck.hasBingo);
+    
+    if (bingoCheck.hasBingo) {
+      setDetectedBingo(bingoCheck);
+    } else {
+      setDetectedBingo(null);
     }
   }, [bingoCard?.markedWords]);
 
-  // Reset BINGO-related state when game changes
+  /**
+   * Reset BINGO-related state when game changes
+   * Clears BINGO call state when game transitions away from "bingo" status
+   */
   useEffect(() => {
     if (effectiveGameStatus !== "bingo") {
       setHasBingoCalled(false);
@@ -78,17 +185,59 @@ export default function BingoGame() {
     }
   }, [effectiveGameStatus]);
 
+  // ============================================================================
+  // EVENT HANDLERS
+  // ============================================================================
+  
   /**
-   * Handle joining the next game when current game is ended
+   * Handle word marking on the bingo card
+   * Marks/unmarks words and handles any resulting state changes
+   */
+  const handleMarkWord = async (word: string) => {
+    const result = await markWord(word);
+    
+    // Log any unexpected BINGO results during word marking
+    // (BINGO should be called separately via handleBingoCall)
+    if (result?.bingo) {
+      console.log('Unexpected BINGO during word marking:', result);
+    }
+  };
+
+  /**
+   * Handle BINGO button press
+   * Calls BINGO with detected pattern and winning words
+   */
+  const handleBingoCall = async () => {
+    if (!detectedBingo?.hasBingo) return;
+
+    const result = await callBingo(
+      detectedBingo.bingoType || 'Unknown',
+      detectedBingo.winningWords || []
+    );
+
+    if (result?.success) {
+      // Store secret word and mark that this player called BINGO
+      setSecretWord(result.secretWord);
+      setHasBingoCalled(true);
+      
+      console.log(`BINGO called successfully! Secret word: ${result.secretWord}`);
+    }
+  };
+
+  /**
+   * Handle joining the next game after current game ends
+   * Checks for active games and updates session accordingly
    */
   const handleJoinNextGame = async () => {
     setJoiningNextGame(true);
+    setJoinGameError(null);
+    
     try {
-      // Check for current active game via API
+      // Check for current active game
       const result = await API.get("api", "/current-game", {});
       
-      if (result.currentGameId && result.status && ['open', 'started', 'paused'].includes(result.status)) {
-        // There's an active game available - update session to join it
+      if (result.currentGameId && result.status && ['open', 'playing', 'paused'].includes(result.status)) {
+        // Join the active game
         const updatedSession = {
           ...session!,
           currentGameId: result.currentGameId
@@ -96,7 +245,7 @@ export default function BingoGame() {
         
         updateSession(updatedSession);
         
-        // Clear any existing game state
+        // Reset game state for new game
         setSecretWord(null);
         setHasBingoCalled(false);
         
@@ -104,7 +253,6 @@ export default function BingoGame() {
       } else {
         // No active game available
         setJoinGameError("No active game available to join. Please wait for an admin to start a new game.");
-        console.log("No active game found when trying to join next game");
       }
     } catch (error) {
       console.error('Failed to join next game:', error);
@@ -115,61 +263,20 @@ export default function BingoGame() {
   };
 
   /**
-   * Handle word marking with BINGO detection
-   * Now much simpler thanks to the useBingoGame hook
-   */
-  const handleMarkWord = async (word: string) => {
-    const result = await markWord(word);
-    
-    // Don't show celebration modal for regular word marking
-    // Only show celebration after admin confirms BINGO
-    if (result?.bingo) {
-      // This shouldn't happen during normal word marking since BINGO is called separately
-      console.log('Unexpected BINGO during word marking:', result);
-    }
-  };
-
-  /**
-   * Handle BINGO button click
-   */
-  const handleBingoCall = async () => {
-    if (!detectedBingo || !detectedBingo.hasBingo) {
-      return;
-    }
-
-    const result = await callBingo(
-      detectedBingo.bingoType || 'Unknown',
-      detectedBingo.winningWords || []
-    );
-
-    if (result && result.success) {
-      // Store the secret word and mark that this player called BINGO
-      setSecretWord(result.secretWord);
-      setHasBingoCalled(true);
-      
-      // Store result for later use but don't show modal yet
-      // The game status will change to "bingo" and the overlay will show "awaiting confirmation"
-    }
-  };
-
-  /**
    * Navigate to leaderboard page
    */
   const handleLeaderboard = () => {
     navigate('/leaderboard');
   };
 
-  // Get latest activity event for banner (excluding current player's events)
-  const latestActivity = events && events.length > 0 
-    ? events.find((event: GameEvent) => {
-        // Normalize the event to get consistent data structure
-        const normalizedEvent = normalizeEvent(event);
-        const playerNickname = normalizedEvent.data?.nickname;
-        return playerNickname && playerNickname !== session?.nickname;
-      })
-    : null;
-
-  // Show loading screen while session or game data loads
+  // ============================================================================
+  // RENDER CONDITIONS
+  // ============================================================================
+  
+  /**
+   * Loading State
+   * Show loading spinner while session or game data is being fetched
+   */
   if (sessionLoading || gameLoading) {
     return (
       <div className="bingo-game-loading">
@@ -181,7 +288,10 @@ export default function BingoGame() {
     );
   }
 
-  // Show error state if session is invalid
+  /**
+   * Error State
+   * Show error message if session is invalid or bingo card failed to load
+   */
   if (!session || !bingoCard) {
     return (
       <div className="bingo-game-error">
@@ -202,17 +312,18 @@ export default function BingoGame() {
     );
   }
 
+  // ============================================================================
+  // MAIN RENDER
+  // ============================================================================
+  
   const currentRank = getCurrentPlayerRank();
-
-  console.log('BingoGame leaderboard data:', {
-    session,
-    currentRank,
-    bingoCard
-  });
+  const latestActivity = getLatestActivity();
 
   return (
     <div className="bingo-game-container">
-      {/* Corporate Header */}
+      {/* ========================================================================
+          HEADER SECTION
+          ======================================================================== */}
       <div className="bingo-game-header">
         <Container>
           <Row className="align-items-center">
@@ -231,7 +342,11 @@ export default function BingoGame() {
       </div>
 
       <Container className="bingo-game-content">
-        {/* Game Status Message - shows when automatically switched to new game */}
+        {/* ======================================================================
+            ALERT MESSAGES
+            ====================================================================== */}
+        
+        {/* Game Status Message */}
         {gameStatusMessage && (
           <Alert variant="info" className="bingo-game-alert">
             <div className="d-flex align-items-center">
@@ -241,7 +356,7 @@ export default function BingoGame() {
           </Alert>
         )}
 
-        {/* Error Alert - now with dismiss functionality */}
+        {/* Game Error Alert */}
         {gameError && (
           <Alert 
             variant="danger" 
@@ -249,7 +364,11 @@ export default function BingoGame() {
             dismissible 
             onClose={clearGameError}
           >
-            {gameError}
+            {gameError.startsWith('GAME_NOT_FOUND|') 
+              ? gameError.split('|')[1] || 'The game no longer exists. Please rejoin the game.'
+              : gameError.startsWith('SESSION_EXPIRED|')
+              ? gameError.split('|')[1] || 'Session expired. Please rejoin the game.'
+              : gameError}
           </Alert>
         )}
 
@@ -265,7 +384,9 @@ export default function BingoGame() {
           </Alert>
         )}
 
-        {/* Assessment Grid - now using our reusable BingoGrid component */}
+        {/* ======================================================================
+            MAIN BINGO GRID
+            ====================================================================== */}
         <Row className="justify-content-center">
           <Col xs={12} lg={8}>
             <Card className="bingo-game-card shadow-sm border-0">
@@ -273,7 +394,9 @@ export default function BingoGame() {
                 <h6 className="bingo-game-card__title">
                   Real-time Communication Assessment Matrix
                 </h6>
-                <small className="bingo-game-card__subtitle">Tap corporate terminology you experience</small>
+                <small className="bingo-game-card__subtitle">
+                  Tap corporate terminology you experience
+                </small>
               </Card.Header>
               <Card.Body className="bingo-game-card__body">
                 <BingoGrid
@@ -283,8 +406,8 @@ export default function BingoGame() {
                   gameStatus={effectiveGameStatus}
                   secretWord={secretWord}
                   awaitingConfirmation={
-                    markingWord === 'BINGO' || // During API call
-                    (effectiveGameStatus === "bingo" && hasBingoCalled) // After call, awaiting admin confirmation
+                    markingWord === 'BINGO' || // During BINGO API call
+                    (effectiveGameStatus === "bingo" && hasBingoCalled) // Awaiting admin confirmation
                   }
                   onJoinNextGame={handleJoinNextGame}
                   winnerInfo={winnerInfo}
@@ -294,7 +417,9 @@ export default function BingoGame() {
           </Col>
         </Row>
 
-        {/* Latest Activity Banner - positioned below bingo card */}
+        {/* ======================================================================
+            ACTIVITY BANNER
+            ====================================================================== */}
         {latestActivity && (
           <Row className="justify-content-center mt-3">
             <Col xs={12} lg={8}>
@@ -302,7 +427,9 @@ export default function BingoGame() {
                 <div className="d-flex align-items-center justify-content-between">
                   <div className="d-flex align-items-center">
                     <span className="activity-banner__icon">📢</span>
-                    <span className="activity-banner__text">{formatEventMessage(latestActivity)}</span>
+                    <span className="activity-banner__text">
+                      {formatEventMessage(latestActivity)}
+                    </span>
                   </div>
                   <Badge bg="secondary" className="activity-banner__badge">
                     Live
@@ -313,7 +440,9 @@ export default function BingoGame() {
           </Row>
         )}
 
-        {/* Player Status - now using our reusable PlayerStatus component */}
+        {/* ======================================================================
+            PLAYER STATUS
+            ====================================================================== */}
         <Row className="justify-content-center mt-4">
           <Col xs={12} lg={8}>
             <PlayerStatus
@@ -324,25 +453,27 @@ export default function BingoGame() {
           </Col>
         </Row>
 
-        {/* Action Buttons */}
+        {/* ======================================================================
+            ACTION BUTTONS
+            ====================================================================== */}
         <Row className="justify-content-center mt-4">
           <Col xs={12} lg={6}>
             <div className="d-grid gap-2">
               {/* BINGO Button */}
               <Button 
                 size="lg" 
-                variant={canCallBingo && effectiveGameStatus === "started" ? "success" : "outline-secondary"}
+                variant={canCallBingo && effectiveGameStatus === "playing" ? "success" : "outline-secondary"}
                 className="w-100"
                 onClick={handleBingoCall}
-                disabled={!canCallBingo || markingWord === 'BINGO' || effectiveGameStatus !== "started"}
+                disabled={!canCallBingo || markingWord === 'BINGO' || effectiveGameStatus !== "playing"}
               >
                 {markingWord === 'BINGO' ? (
                   <>
                     <span className="spinner-border spinner-border-sm me-2" />
                     Calling BINGO...
                   </>
-                ) : canCallBingo && effectiveGameStatus === "started" ? (
-                  <> BINGO!</>
+                ) : canCallBingo && effectiveGameStatus === "playing" ? (
+                  <>🎯 BINGO!</>
                 ) : (
                   <>BINGO</>
                 )}
@@ -354,7 +485,7 @@ export default function BingoGame() {
                 className="w-100 bingo-game-button"
                 onClick={handleLeaderboard}
               >
-                View Performance Dashboard
+                📊 View Performance Dashboard
               </Button>
             </div>
           </Col>

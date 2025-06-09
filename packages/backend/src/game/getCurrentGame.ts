@@ -36,12 +36,12 @@ async function getCurrentGame(event: APIGatewayProxyEvent) {
     // Find the current active game
     const scanResult = await dynamoDb.send(new ScanCommand({
       TableName: Resource.Games.name,
-      FilterExpression: "#status IN (:started, :open, :paused, :bingo)",
-      ExpressionAttributeNames: {
-        "#status": "status",
-      },
-      ExpressionAttributeValues: {
-        ":started": "started",
+          FilterExpression: "#status IN (:playing, :open, :paused, :bingo)",
+    ExpressionAttributeNames: {
+      "#status": "status",
+    },
+    ExpressionAttributeValues: {
+      ":playing": "playing",
         ":open": "open", 
         ":paused": "paused",
         ":bingo": "bingo"
@@ -176,7 +176,22 @@ async function getCurrentGame(event: APIGatewayProxyEvent) {
             Key: { gameId: playerGameId },
           }));
           
-          playerGameStatus = playerGameResult.Item?.status || "not_found";
+          if (!playerGameResult.Item) {
+            // Player's game doesn't exist - likely purged
+            console.log(`Player's game ${playerGameId} not found - returning clear cache instruction`);
+            return {
+              statusCode: 200,
+              body: JSON.stringify({
+                action: "clear_cache",
+                reason: "player_game_not_found", 
+                message: "Your game no longer exists. The system may have been reset.",
+                currentGameId: currentActiveGameId,
+                timestamp: new Date().toISOString()
+              })
+            };
+          }
+          
+          playerGameStatus = playerGameResult.Item.status;
         } catch (error) {
           playerGameStatus = "error";
         }
