@@ -8,7 +8,7 @@ import Form from 'react-bootstrap/Form';
 import Badge from 'react-bootstrap/Badge';
 import Alert from 'react-bootstrap/Alert';
 import Spinner from 'react-bootstrap/Spinner';
-import ListGroup from 'react-bootstrap/ListGroup';
+import Modal from 'react-bootstrap/Modal';
 import './GameCreator.css';
 
 interface WordCategory {
@@ -19,7 +19,6 @@ interface WordCategory {
 interface GameSettings {
   gridSize: "3x3" | "4x4" | "5x5";
   selectedCategories: string[];
-  gameMode: "normal" | "speed" | "challenge";
 }
 
 const GRID_REQUIREMENTS = {
@@ -37,12 +36,12 @@ export default function GameCreator({ onGameCreated }: GameCreatorProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
   
   // Game settings
   const [gameSettings, setGameSettings] = useState<GameSettings>({
     gridSize: "5x5",
-    selectedCategories: [],
-    gameMode: "normal"
+    selectedCategories: []
   });
 
   // Load available categories
@@ -120,8 +119,7 @@ export default function GameCreator({ onGameCreated }: GameCreatorProps) {
         // Reset selections after successful creation
         setGameSettings({
           gridSize: "5x5",
-          selectedCategories: [],
-          gameMode: "normal"
+          selectedCategories: []
         });
 
         // Notify parent component if callback provided
@@ -149,16 +147,13 @@ export default function GameCreator({ onGameCreated }: GameCreatorProps) {
     }
   };
 
-  return (
-    <div className="game-creator">
-      {/* Header */}
-      <div className="game-creator-header mb-4">
-        <h3 className="game-creator-title">🎮 Create New Game</h3>
-        <p className="game-creator-subtitle">
-          Configure game settings, select word categories, and create targeted corporate bingo experiences
-        </p>
-      </div>
+  const handleGridSizeSelect = (size: "3x3" | "4x4" | "5x5") => {
+    setGameSettings(prev => ({ ...prev, gridSize: size }));
+    setShowCategoryModal(true);
+  };
 
+  return (
+    <div className="container-fluid">
       {/* Status Messages */}
       {error && (
         <Alert variant="danger" dismissible onClose={() => setError(null)} className="mb-4">
@@ -174,159 +169,157 @@ export default function GameCreator({ onGameCreated }: GameCreatorProps) {
         </Alert>
       )}
 
-      <Row>
-        {/* Game Settings Panel */}
-        <Col lg={4}>
-          <Card className="game-creator-settings-card mb-4">
-            <Card.Header className="bg-primary text-white">
-              <h5 className="mb-0">⚙️ Game Settings</h5>
+      {/* Grid Size Selection */}
+      <Row className="justify-content-center">
+        <Col lg={10}>
+          <Card className="border-0 shadow-sm">
+            <Card.Header className="bg-primary text-white text-center">
+              <h4 className="mb-0">🎯 Create New Game</h4>
+              <small>Choose your grid size to get started</small>
             </Card.Header>
-            <Card.Body>
-              {/* Grid Size Selection */}
-              <Form.Group className="mb-4">
-                <Form.Label>Grid Size</Form.Label>
+            <Card.Body className="p-4">
+              <h5 className="text-center mb-4">Select Grid Size</h5>
+              <Row className="g-3">
                 {Object.entries(GRID_REQUIREMENTS).map(([size, info]) => (
-                  <Form.Check
-                    key={size}
-                    type="radio"
-                    id={`grid-${size}`}
-                    name="gridSize"
-                    label={
-                      <div>
-                        <strong>{size}</strong> ({info.markable} words needed)
-                        <br />
-                        <small className="text-muted">{info.description}</small>
-                      </div>
-                    }
-                    checked={gameSettings.gridSize === size}
-                    onChange={() => setGameSettings(prev => ({ ...prev, gridSize: size as any }))}
-                    className="mb-2"
-                  />
-                ))}
-              </Form.Group>
-
-              {/* Game Mode */}
-              <Form.Group className="mb-4">
-                <Form.Label>Game Mode</Form.Label>
-                <Form.Select
-                  value={gameSettings.gameMode}
-                  onChange={(e) => setGameSettings(prev => ({ 
-                    ...prev, 
-                    gameMode: e.target.value as any 
-                  }))}
-                >
-                  <option value="normal">Normal - Standard game pace</option>
-                  <option value="speed">Speed - Fast-paced gameplay</option>
-                  <option value="challenge">Challenge - Expert level</option>
-                </Form.Select>
-              </Form.Group>
-
-              {/* Word Summary */}
-              <div className="game-creator-word-summary">
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <span className="fw-semibold">Word Requirements:</span>
-                  <Badge bg={canCreateGame() ? "success" : "danger"}>
-                    {getTotalAvailableWords()} / {getRequiredWords()} words
-                  </Badge>
-                </div>
-                <div className="progress mb-3">
-                  <div 
-                    className={`progress-bar ${canCreateGame() ? 'bg-success' : 'bg-danger'}`}
-                    style={{ 
-                      width: `${Math.min(100, (getTotalAvailableWords() / getRequiredWords()) * 100)}%` 
-                    }}
-                  />
-                </div>
-                
-                <Button 
-                  variant="success" 
-                  size="lg" 
-                  className="w-100"
-                  onClick={createGame}
-                  disabled={!canCreateGame() || loading}
-                >
-                  {loading ? (
-                    <>
-                      <Spinner size="sm" className="me-2" />
-                      Creating Game...
-                    </>
-                  ) : (
-                    <>🚀 Create Game</>
-                  )}
-                </Button>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        {/* Category Selection Panel */}
-        <Col lg={8}>
-          <Card className="game-creator-categories-card">
-            <Card.Header className="bg-info text-white">
-              <div className="d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">📚 Word Categories</h5>
-                <Badge bg="light" text="dark">
-                  {gameSettings.selectedCategories.length} selected
-                </Badge>
-              </div>
-            </Card.Header>
-            <Card.Body>
-              {loading ? (
-                <div className="text-center py-4">
-                  <Spinner className="me-2" />
-                  Loading categories...
-                </div>
-              ) : categories.length === 0 ? (
-                <Alert variant="warning">
-                  <h6>No Categories Available</h6>
-                  <p>Please create some word categories first before creating games.</p>
-                  <Button variant="outline-primary" onClick={loadCategories}>
-                    🔄 Reload Categories
-                  </Button>
-                </Alert>
-              ) : (
-                <ListGroup variant="flush">
-                  {categories.map((category) => (
-                    <ListGroup.Item 
-                      key={category.category}
-                      className={`game-creator-category-item ${
-                        gameSettings.selectedCategories.includes(category.category) ? 'selected' : ''
-                      }`}
-                      action
-                      onClick={() => handleCategoryToggle(category.category)}
+                  <Col md={4} key={size}>
+                    <Card 
+                      className={`h-100 border-2 cursor-pointer ${gameSettings.gridSize === size ? 'border-primary bg-light' : 'border-light'}`}
+                      onClick={() => handleGridSizeSelect(size as any)}
+                      style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
                     >
-                      <div className="d-flex justify-content-between align-items-center">
-                        <div className="d-flex align-items-center">
-                          <Form.Check
-                            type="checkbox"
-                            checked={gameSettings.selectedCategories.includes(category.category)}
-                            onChange={() => {}} // Handled by onClick
-                            className="me-3"
-                          />
-                          <div>
-                            <div className="d-flex align-items-center mb-1">
-                              <Badge bg={getCategoryColor(category.category)} className="me-2">
-                                {category.category}
-                              </Badge>
-                              <small className="text-muted">
-                                {category.words.length} words
-                              </small>
-                            </div>
-                            <div className="game-creator-word-preview">
-                              {category.words.slice(0, 5).join(', ')}
-                              {category.words.length > 5 && '...'}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
+                      <Card.Body className="text-center p-4">
+                        <div className="display-6 mb-3">{size}</div>
+                        <h6 className="text-primary">{info.markable} words needed</h6>
+                        <p className="text-muted small mb-0">{info.description}</p>
+                        {gameSettings.selectedCategories.length > 0 && gameSettings.gridSize === size && (
+                          <Badge bg="success" className="mt-2">
+                            {gameSettings.selectedCategories.length} categories selected
+                          </Badge>
+                        )}
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+              
+              {gameSettings.selectedCategories.length > 0 && (
+                <div className="text-center mt-4">
+                  <div className="d-flex justify-content-center align-items-center mb-3">
+                    <span className="me-3">Word Requirements:</span>
+                    <Badge bg={canCreateGame() ? "success" : "danger"} className="fs-6">
+                      {getTotalAvailableWords()} / {getRequiredWords()} words
+                    </Badge>
+                  </div>
+                  <div className="progress mb-3" style={{ height: '10px' }}>
+                    <div 
+                      className={`progress-bar ${canCreateGame() ? 'bg-success' : 'bg-danger'}`}
+                      style={{ width: `${Math.min(100, (getTotalAvailableWords() / getRequiredWords()) * 100)}%` }}
+                    />
+                  </div>
+                  
+                  <Button 
+                    variant={canCreateGame() ? "success" : "outline-secondary"}
+                    size="lg" 
+                    onClick={createGame}
+                    disabled={!canCreateGame() || loading}
+                    className="px-5"
+                  >
+                    {loading ? (
+                      <>
+                        <Spinner size="sm" className="me-2" />
+                        Creating Game...
+                      </>
+                    ) : (
+                      <>🚀 Create Game</>
+                    )}
+                  </Button>
+                </div>
               )}
             </Card.Body>
           </Card>
         </Col>
       </Row>
+
+      {/* Category Selection Modal */}
+      <Modal show={showCategoryModal} onHide={() => setShowCategoryModal(false)} size="lg" centered>
+        <Modal.Header closeButton className="bg-info text-white">
+          <Modal.Title>
+            📚 Select Word Categories for {gameSettings.gridSize} Grid
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="mb-3 text-center">
+            <Badge bg="info" className="fs-6">
+              Need {getRequiredWords()} words minimum
+            </Badge>
+          </div>
+          
+          {loading ? (
+            <div className="text-center py-4">
+              <Spinner className="me-2" />
+              Loading categories...
+            </div>
+          ) : categories.length === 0 ? (
+            <Alert variant="warning">
+              <h6>No Categories Available</h6>
+              <p>Please create some word categories first before creating games.</p>
+              <Button variant="outline-primary" onClick={loadCategories}>
+                🔄 Reload Categories
+              </Button>
+            </Alert>
+          ) : (
+            <Row className="g-3">
+              {categories.map((category) => (
+                <Col sm={6} md={4} key={category.category}>
+                  <Card 
+                    className={`h-100 border cursor-pointer ${
+                      gameSettings.selectedCategories.includes(category.category) 
+                        ? 'border-primary bg-light' 
+                        : 'border-light'
+                    }`}
+                    onClick={() => handleCategoryToggle(category.category)}
+                    style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
+                  >
+                    <Card.Body className="p-3 text-center">
+                      <Form.Check
+                        type="checkbox"
+                        checked={gameSettings.selectedCategories.includes(category.category)}
+                        onChange={() => {}} // Handled by onClick
+                        className="mb-2"
+                      />
+                      <Badge bg={getCategoryColor(category.category)} className="mb-2">
+                        {category.category}
+                      </Badge>
+                      <div className="small text-muted mb-2">
+                        {category.words.length} words
+                      </div>
+                      <div className="small text-truncate" title={category.words.slice(0, 5).join(', ')}>
+                        {category.words.slice(0, 3).join(', ')}
+                        {category.words.length > 3 && '...'}
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          )}
+        </Modal.Body>
+        <Modal.Footer className="justify-content-between">
+          <div>
+            <Badge bg="secondary">
+              {gameSettings.selectedCategories.length} categories selected
+            </Badge>
+            {getTotalAvailableWords() > 0 && (
+              <Badge bg={canCreateGame() ? "success" : "warning"} className="ms-2">
+                {getTotalAvailableWords()} words available
+              </Badge>
+            )}
+          </div>
+          <Button variant="primary" onClick={() => setShowCategoryModal(false)}>
+            Done
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 } 

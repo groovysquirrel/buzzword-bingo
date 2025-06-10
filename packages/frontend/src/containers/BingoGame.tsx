@@ -473,7 +473,7 @@ export default function BingoGame() {
                     Calling BINGO...
                   </>
                 ) : canCallBingo && effectiveGameStatus === "playing" ? (
-                  <>🎯 BINGO!</>
+                  <>BINGO!</>
                 ) : (
                   <>BINGO</>
                 )}
@@ -485,7 +485,7 @@ export default function BingoGame() {
                 className="w-100 bingo-game-button"
                 onClick={handleLeaderboard}
               >
-                📊 View Performance Dashboard
+                View Performance Dashboard
               </Button>
             </div>
           </Col>

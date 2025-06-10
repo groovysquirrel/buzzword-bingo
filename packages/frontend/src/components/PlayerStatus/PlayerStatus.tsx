@@ -36,7 +36,15 @@ export function PlayerStatus({
   }
 
   const markedWordsCount = bingoCard.markedWords.length;
-  const totalWords = 24; // 25 total - 1 free space
+  
+  // Calculate total words dynamically based on card size
+  const totalCells = bingoCard.words.length * bingoCard.words[0].length;
+  const hasFreeSpace = bingoCard.words.length % 2 === 1; // Only odd grids (3x3, 5x5) have FREE "SYNERGY" space in center
+  const totalWords = hasFreeSpace ? totalCells - 1 : totalCells; 
+  // 3x3: 9 cells - 1 FREE = 8 markable terms
+  // 4x4: 16 cells - 0 FREE = 16 markable terms  
+  // 5x5: 25 cells - 1 FREE = 24 markable terms
+  
   const progressPercentage = Math.round((markedWordsCount / totalWords) * 100);
   const points = markedWordsCount * 10;
 

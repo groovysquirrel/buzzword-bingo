@@ -202,7 +202,7 @@ NEXT STEP: Review the username: "${nickname}" and respond with the appropriate J
  * Basic fallback profanity filter (used when AI is unavailable)
  */
 function validateUsernameBasic(nickname: string): {status: "approved" | "rejected", alternateName?: string, reason?: string} {
-  const profanityWords = ["fuck", "shit", "damn", "hell", "ass", "bitch", "crap"];
+  const profanityWords = ["fuck", "shit", "damn", "hell", "ass", "bitch", "crap", "poop", "butt"];
   const lowercaseNickname = nickname.toLowerCase();
   
   if (profanityWords.some(word => lowercaseNickname.includes(word))) {
