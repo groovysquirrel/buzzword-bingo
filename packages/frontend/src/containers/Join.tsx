@@ -382,7 +382,7 @@ export default function Join() {
               <Card.Body className="join-card-body">
                 
                 {/* Corporate Branding */}
-                <div className="mb-4">
+                <div className="mb-3">
                   <img 
                     src="/buzzword_bingo_image2.png" 
                     alt="Corporate Buzzword Bingo - Professional Assessment Tool" 
@@ -406,7 +406,7 @@ export default function Join() {
                       disabled={loading}
                     />
                     <div className="join-form-text">
-                      Names are moderated by a disdainful AI. 20 charaters max. 
+                      Display names moderated by a disdainful AI. 
                     </div>
                   </div>
                   

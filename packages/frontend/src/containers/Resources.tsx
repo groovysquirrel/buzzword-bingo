@@ -53,111 +53,139 @@ import "./Resources.css";
  */
 export default function Resources(): JSX.Element {
   /**
-   * Resource data structure
+   * Resource data structure based on actual project resources
    * 
-   * Organized into categories, each containing items with:
-   * - title: Display name of the resource
-   * - description: Brief explanation of what the resource contains
-   * - url: Direct link to the resource (GitHub, external site, etc.)
-   * - type: Category of resource (GitHub Repo, TypeScript, etc.)
-   * - badge: Colored label indicating the resource's primary focus
-   * 
-   * NOTE: Update URLs to match your actual repository when deploying
+   * Organized into categories matching the project's documentation structure.
+   * Each resource includes title, description, URL, type, and badge for categorization.
    */
   const resources = [
+   
+    {
+      category: "Project Development",
+      items: [
+        {
+          title: "Vision",
+          description: "Project vision and goals documentation",
+          url: "https://github.com/groovysquirrel/buzzword-bingo/blob/base-bingo-app/docs/1-Vision.md",
+          type: "Documentation",
+          badge: "Problem Statement"
+        },
+        {
+          title: "ChatGPT Requirements Conversation",
+          description: "Requirements gathering conversation with AI",
+          url: "https://github.com/groovysquirrel/buzzword-bingo/blob/base-bingo-app/docs/2-ChatGPT_requirements_conversation.md",
+          type: "Documentation",
+          badge: "Brainstorming"
+        },
+        {
+          title: "Mockup",
+          description: "User interface mockup and design",
+          url: "https://github.com/groovysquirrel/buzzword-bingo/blob/base-bingo-app/docs/3-mockup_user_screen.png",
+          type: "Image",
+          badge: "Design"
+        },
+        {
+          title: "Version 1 Prompt",
+          description: "Initial development prompt and specifications",
+          url: "https://github.com/groovysquirrel/buzzword-bingo/blob/base-bingo-app/docs/4-BuildV1.md",
+          type: "Documentation",
+          badge: "Build Prompt"
+        },
+        {
+          title: "Websocket Prompt",
+          description: "WebSocket implementation guidance and specifications",
+          url: "https://github.com/groovysquirrel/buzzword-bingo/blob/base-bingo-app/docs/5-WebsocketImplementation.md",
+          type: "Documentation",
+          badge: "WebSocket Upgrade"
+        },
+        {
+          title: "Workshopable Files",
+          description: "Key files for live coding demonstrations and workshops",
+          url: "https://github.com/groovysquirrel/buzzword-bingo/blob/base-bingo-app/docs/KEY_FILES_FOR_DEMO.md",
+          type: "Documentation",
+          badge: "Demo Time"
+        }
+      ]
+    },
+    {
+      category: "Development Framework",
+      items: [
+        {
+          title: "Serverless Stack (SST)",
+          description: "Modern full-stack framework for AWS",
+          url: "https://sst.dev/",
+          type: "Framework",
+          badge: "Infrastructure"
+        },
+        {
+          title: "SST Getting Started Guide",
+          description: "Comprehensive guide to getting started with SST",
+          url: "https://guide.sst.dev/",
+          type: "Tutorial",
+          badge: "Learning"
+        },
+        {
+          title: "SST Sample Project (Notes App)",
+          description: "Reference implementation of an SST application",
+          url: "https://github.com/sst/demo-notes-app",
+          type: "GitHub Repo",
+          badge: "Example"
+        }
+      ]
+    },
+    {
+      category: "Development Tools",
+      items: [
+        {
+          title: "Cursor AI",
+          description: "AI-powered code editor used for development",
+          url: "https://www.cursor.com/",
+          type: "Tool",
+          badge: "AI Editor"
+        },
+        {
+          title: "Anthropic Claude 4.0",
+          description: "Advanced AI assistant for code generation and analysis",
+          url: "https://www.anthropic.com/",
+          type: "AI Service",
+          badge: "AI Assistant"
+        }
+      ]
+    },
     {
       category: "Source Code",
       items: [
         {
-          title: "Buzzword Bingo Repository",
-          description: "Complete source code for this application",
-          url: "https://github.com/your-username/buzzword-bingo",
-          type: "GitHub Repo",
-          badge: "Full Stack"
+          title: "Base Project (Updated SST)",
+          description: "Updated SST project foundation",
+          url: "https://github.com/groovysquirrel/buzzword-bingo/tree/base-project",
+          type: "GitHub Branch",
+          badge: "Foundation"
         },
         {
-          title: "Frontend Components",
-          description: "React components and UI implementation",
-          url: "https://github.com/your-username/buzzword-bingo/tree/main/packages/frontend",
-          type: "GitHub Folder",
-          badge: "React"
-        },
-        {
-          title: "Backend APIs",
-          description: "Serverless functions and game logic",
-          url: "https://github.com/your-username/buzzword-bingo/tree/main/packages/backend",
-          type: "GitHub Folder",
-          badge: "AWS Lambda"
+          title: "Base Bingo Code",
+          description: "Core bingo application implementation",
+          url: "https://github.com/groovysquirrel/buzzword-bingo/tree/base-bingo-app",
+          type: "GitHub Branch",
+          badge: "Application"
         }
       ]
     },
     {
-      category: "Key Files for Demo",
+      category: "AWS Documentation",
       items: [
         {
-          title: "Game Utils & Buzzwords",
-          description: "Master buzzword list and game mechanics",
-          url: "https://github.com/your-username/buzzword-bingo/blob/main/packages/backend/src/lib/gameUtils.ts",
-          type: "TypeScript",
-          badge: "Core Logic"
+          title: "Bedrock Invoke Documentation",
+          description: "AWS Bedrock API documentation for model invocation",
+          url: "https://docs.aws.amazon.com/bedrock/latest/userguide/bedrock-runtime_example_bedrock-runtime_InvokeModel_MetaLlama3_section.html",
+          type: "AWS Docs",
+          badge: "AI/ML"
         },
         {
-          title: "User Validation",
-          description: "Nickname filtering and content moderation",
-          url: "https://github.com/your-username/buzzword-bingo/blob/main/packages/backend/src/lib/userValidation.ts",
-          type: "TypeScript",
-          badge: "Moderation"
-        },
-        {
-          title: "Event Formatter",
-          description: "Real-time activity feed and notifications",
-          url: "https://github.com/your-username/buzzword-bingo/blob/main/packages/frontend/src/utils/eventFormatter.ts",
-          type: "TypeScript",
-          badge: "Real-time"
-        }
-      ]
-    },
-    {
-      category: "Documentation",
-      items: [
-        {
-          title: "Demo Guide",
-          description: "Key files for live coding demonstrations",
-          url: "https://github.com/your-username/buzzword-bingo/blob/main/docs/KEY_FILES_FOR_DEMO.md",
-          type: "Markdown",
-          badge: "Demo Ready"
-        },
-        {
-          title: "Architecture Overview",
-          description: "System design and technology stack",
-          url: "https://github.com/your-username/buzzword-bingo/blob/main/README.md",
-          type: "README",
-          badge: "Architecture"
-        }
-      ]
-    },
-    {
-      category: "Technology Stack",
-      items: [
-        {
-          title: "SST Framework",
-          description: "Serverless stack for AWS deployment",
-          url: "https://sst.dev/",
-          type: "External",
-          badge: "Infrastructure"
-        },
-        {
-          title: "React Bootstrap",
-          description: "UI component library for responsive design",
-          url: "https://react-bootstrap.netlify.app/",
-          type: "External",
-          badge: "UI Library"
-        },
-        {
-          title: "AWS DynamoDB",
-          description: "NoSQL database for game state and user data",
-          url: "https://aws.amazon.com/dynamodb/",
-          type: "External",
+          title: "DynamoDB Best Practices",
+          description: "Best practices guide for AWS DynamoDB usage",
+          url: "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/best-practices.html",
+          type: "AWS Docs",
           badge: "Database"
         }
       ]
@@ -258,7 +286,7 @@ export default function Resources(): JSX.Element {
               {/* Action Buttons */}
               <div className="contributing-buttons">
                 <Button
-                  href="https://github.com/your-username/buzzword-bingo"
+                  href="https://github.com/groovysquirrel/buzzword-bingo"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="contributing-button-primary"
@@ -267,7 +295,7 @@ export default function Resources(): JSX.Element {
                 </Button>
                 
                 <Button
-                  href="https://github.com/your-username/buzzword-bingo/issues"
+                  href="https://github.com/groovysquirrel/buzzword-bingo/issues"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="contributing-button-secondary"
@@ -276,7 +304,7 @@ export default function Resources(): JSX.Element {
                 </Button>
                 
                 <Button
-                  href="https://github.com/your-username/buzzword-bingo/fork"
+                  href="https://github.com/groovysquirrel/buzzword-bingo/fork"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="contributing-button-secondary"

@@ -146,7 +146,7 @@
   z-index: 10;
   overflow: hidden;
   animation: slideInFromBottom 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  min-height: 580px;
+  min-height: 520px;
   display: flex;
   flex-direction: column;
 }
@@ -173,13 +173,13 @@
  * - Flexible height distribution
  */
 .join-card-body {
-  padding: var(--space-2xl) var(--space-xl);
+  padding: var(--space-xl) var(--space-lg);
   text-align: center;
   display: flex;
   flex-direction: column;
   justify-content: center;
   flex: 1;
-  gap: var(--space-lg);
+  gap: var(--space-md);
 }
 
 /* === 4. CORPORATE BRANDING ELEMENTS === */
@@ -191,7 +191,7 @@
  * - Hover effects for engagement
  */
 .join-bee-logo {
-  max-height: 240px;
+  max-height: 180px;
   width: auto;
   max-width: 100%;
   filter: drop-shadow(var(--shadow-sm));
@@ -213,7 +213,7 @@
  * - Consistent color usage
  */
 .join-header {
-  margin-bottom: var(--space-lg);
+  margin-bottom: var(--space-md);
 }
 
 .join-title {
@@ -238,7 +238,7 @@
  * Form container with proper spacing
  */
 .join-form {
-  margin-bottom: var(--space-xl);
+  margin-bottom: var(--space-sm);
   text-align: left;
 }
 
@@ -246,7 +246,7 @@
  * Form group with consistent spacing
  */
 .join-form-group {
-  margin-bottom: var(--space-lg);
+  margin-bottom: var(--space-md);
 }
 
 /**
@@ -381,8 +381,8 @@
  */
 .join-features {
   border-top: 1px solid var(--gray-200);
-  padding-top: var(--space-lg);
-  margin-top: var(--space-lg);
+  padding-top: var(--space-sm);
+  margin-top: var(--space-sm);
   text-align: left;
 }
 
@@ -493,11 +493,11 @@
   .join-card {
     max-width: 100%;
     margin: 0 var(--space-sm);
-    min-height: 520px;
+    min-height: 480px;
   }
   
   .join-card-body {
-    padding: var(--space-xl) var(--space-lg);
+    padding: var(--space-lg) var(--space-md);
   }
   
   .join-bee-logo {
@@ -521,17 +521,17 @@
   
   .join-card {
     margin: 0;
-    min-height: 480px;
+    min-height: 420px;
     border-radius: var(--radius-md);
   }
   
   .join-card-body {
-    padding: var(--space-lg) var(--space-md);
-    gap: var(--space-md);
+    padding: var(--space-md) var(--space-sm);
+    gap: var(--space-sm);
   }
   
   .join-bee-logo {
-    max-height: 180px;
+    max-height: 140px;
   }
   
   .join-title {
